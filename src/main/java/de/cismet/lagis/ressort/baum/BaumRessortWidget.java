@@ -5,14 +5,20 @@
  */
 package de.cismet.lagis.ressort.baum;
 
+import com.vividsolutions.jts.geom.Geometry;
 import de.cismet.cismap.commons.features.Feature;
+import de.cismet.cismap.commons.features.FeatureCollection;
 import de.cismet.cismap.commons.features.FeatureCollectionEvent;
 import de.cismet.cismap.commons.features.FeatureCollectionListener;
+import de.cismet.cismap.commons.features.StyledFeature;
 import de.cismet.cismap.commons.gui.MappingComponent;
+import de.cismet.cismap.commons.gui.StyledFeatureGroupWrapper;
 import de.cismet.lagis.broker.EJBroker;
 import de.cismet.lagis.broker.LagisBroker;
 import de.cismet.lagis.editor.DateEditor;
 import de.cismet.lagis.gui.checkbox.JCheckBoxList;
+import de.cismet.lagis.gui.copypaste.Copyable;
+import de.cismet.lagis.gui.copypaste.Pasteable;
 import de.cismet.lagis.interfaces.FeatureSelectionChangedListener;
 import de.cismet.lagis.interfaces.FlurstueckChangeListener;
 import de.cismet.lagis.interfaces.FlurstueckSaver;
@@ -25,6 +31,7 @@ import de.cismet.lagis.utillity.GeometrySlotInformation;
 import de.cismet.lagis.validation.Validatable;
 import de.cismet.lagis.validation.Validator;
 import de.cismet.lagis.widget.AbstractWidget;
+import de.cismet.lagisEE.entity.basic.BasicEntity;
 import de.cismet.lagisEE.entity.core.Flurstueck;
 import de.cismet.lagisEE.entity.core.FlurstueckSchluessel;
 import de.cismet.lagisEE.entity.core.hardwired.FlurstueckArt;
@@ -45,14 +52,17 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 import javax.swing.DefaultListCellRenderer;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -78,7 +88,19 @@ import org.jdesktop.swingx.decorator.SortOrder;
  *
  * @author  Sebastian Puhl
  */
-public class BaumRessortWidget extends AbstractWidget implements FlurstueckChangeListener, FlurstueckSaver, MouseListener, ListSelectionListener, ItemListener, GeometrySlotProvider, FeatureSelectionChangedListener, FeatureCollectionListener, TableModelListener {
+public class BaumRessortWidget 
+extends AbstractWidget 
+implements FlurstueckChangeListener, 
+           FlurstueckSaver, 
+           MouseListener, 
+           ListSelectionListener, 
+           ItemListener, 
+           GeometrySlotProvider, 
+           FeatureSelectionChangedListener, 
+           FeatureCollectionListener, 
+           TableModelListener,
+           Copyable,
+           Pasteable{
 
     private final Logger log = org.apache.log4j.Logger.getLogger(this.getClass());
     private boolean isFlurstueckEditable = true;
@@ -91,12 +113,22 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
     private ImageIcon icoExistingContract = new javax.swing.ImageIcon(getClass().getResource("/de/cismet/lagis/ressource/icons/toolbar/contract.png"));
     private JComboBox cbxAuspraegung = new JComboBox();
     private boolean ignoreFeatureSelectionEvent = false;
+    private final Icon copyDisplayIcon;
+    
     private final ActionListener cboAuspraegungsActionListener = new ActionListener() {
 
         public void actionPerformed(ActionEvent event) {
 
         }
     };
+    
+    
+    private static final String WIDGET_ICON = "/de/cismet/lagis/ressort/baum/icons/baum.png";
+    
+    
+    public BaumRessortWidget(final String widgetName) {
+        this(widgetName, WIDGET_ICON);
+    }
 
     /** Creates new form BaumRessortWidget */
     public BaumRessortWidget(String widgetName, String iconPath) {
@@ -106,7 +138,116 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         configureComponents();
         configBackgroundThread();
         setOpaqueRecursive(panBackground.getComponents());
+        this.copyDisplayIcon = new ImageIcon(this.getClass().getResource(WIDGET_ICON));
     }
+    
+    
+    @Override
+    public List<BasicEntity> getCopyData() 
+    {
+        final Vector<Baum> allBaeume = this.baumModel.getAllBaeume();
+        final ArrayList<BasicEntity> result = new ArrayList<BasicEntity>(allBaeume.size());
+
+        Baum tmp;
+        for (final Baum baum : allBaeume) 
+        {
+            tmp = new Baum();
+
+            tmp.setAlteNutzung(baum.getAlteNutzung());
+            tmp.setAuftragnehmer(baum.getAuftragnehmer());
+            tmp.setBaumMerkmal(baum.getBaumMerkmal());
+            tmp.setBaumNutzung(baum.getBaumNutzung());
+            tmp.setBemerkung(baum.getBemerkung());
+            tmp.setCanBeSelected(baum.canBeSelected());
+            tmp.setEditable(baum.isEditable());
+            tmp.setErfassungsdatum(baum.getErfassungsdatum());
+            tmp.setFaelldatum(baum.getFaelldatum());
+            tmp.setFillingPaint(baum.getFillingPaint());
+            tmp.setFlaeche(baum.getFlaeche());
+            
+            final Geometry geom = baum.getGeometry();
+            if (geom != null) {
+                tmp.setGeometry((Geometry)geom.clone());
+            }
+
+            tmp.setHighlightingEnabled(baum.isHighlightingEnabled());
+            tmp.setLage(baum.getLage());
+            tmp.setLinePaint(baum.getLinePaint());
+            tmp.setLineWidth(baum.getLineWidth());
+            tmp.setModifiable(baum.isModifiable());
+            tmp.setPointAnnotationSymbol(baum.getPointAnnotationSymbol());
+            tmp.setTransparency(baum.getTransparency());
+            tmp.hide(baum.isHidden());
+            
+            result.add(tmp);
+        }
+
+        return result;
+    }
+
+    @Override
+    public void paste(BasicEntity item) 
+    {
+        if (item == null) {
+            throw new NullPointerException("Given data item must not be null");
+        }
+
+        if (item instanceof Baum) {
+            final Vector<Baum> residentBaeume = this.baumModel.getAllBaeume();
+
+            if (residentBaeume.contains(item)) {
+                log.warn("Baum " + item + " does already exist in Flurstück " + this.currentFlurstueck);
+            } else {
+                this.baumModel.addBaum((Baum)item);
+                this.baumModel.fireTableDataChanged();
+
+                final MappingComponent mc = LagisBroker.getInstance().getMappingComponent();
+                final Feature f = new StyledFeatureGroupWrapper((StyledFeature)item, PROVIDER_NAME, PROVIDER_NAME);
+                mc.getFeatureCollection().addFeature(f);
+                mc.setGroupLayerVisibility(PROVIDER_NAME, true);
+            }
+        }
+    }
+
+    @Override
+    public void pasteAll(List<BasicEntity> dataList) 
+    {
+        if (dataList == null) {
+            throw new NullPointerException("Given list of Baum items must not be null");
+        }
+
+        if (dataList.isEmpty()) {
+            return;
+        }
+
+        final Vector<Baum> residentBaeume = this.baumModel.getAllBaeume();
+        final int rowCountBefore = this.baumModel.getRowCount();
+
+        final MappingComponent mc = LagisBroker.getInstance().getMappingComponent();
+        final FeatureCollection fc = mc.getFeatureCollection();
+        
+        StyledFeatureGroupWrapper wrapper;
+        for (final BasicEntity entity : dataList) {
+            if (entity instanceof Baum) {
+                if (residentBaeume.contains(entity)) {
+                    log.warn("Verwaltungsbereich " + entity + " does already exist in Flurstück "
+                                + this.currentFlurstueck);
+                } else {
+                    this.baumModel.addBaum((Baum)entity);
+                    wrapper = new StyledFeatureGroupWrapper((StyledFeature) entity, PROVIDER_NAME, PROVIDER_NAME);
+                    fc.addFeature(wrapper);
+                }
+            }
+        }
+
+        if (rowCountBefore == this.baumModel.getRowCount()) {
+            log.warn("No Baum items were added from input list " + dataList);
+        } else {
+            this.baumModel.fireTableDataChanged();
+            mc.setGroupLayerVisibility(PROVIDER_NAME, true);
+        }
+    }
+    
 
     private void setOpaqueRecursive(Component[] components) {
         for (Component currentComp : components) {
@@ -306,14 +447,21 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                     EventQueue.invokeLater(new Runnable() {
 
                         public void run() {
-                            Vector<Feature> features = baumModel.getAllBaumFeatures();
+                            final Vector<Feature>   features          = baumModel.getAllBaumFeatures();
+                            final MappingComponent  mappingComp       = LagisBroker.getInstance().getMappingComponent();
+                            final FeatureCollection featureCollection = mappingComp.getFeatureCollection();
+                            
                             if (features != null) {
                                 for (Feature currentFeature : features) {
                                     if (currentFeature != null) {
                                         if (isWidgetReadOnly()) {
                                             ((Baum) currentFeature).setModifiable(false);
                                         }
-                                        LagisBroker.getInstance().getMappingComponent().getFeatureCollection().addFeature(currentFeature);
+                                        
+                                        currentFeature = new StyledFeatureGroupWrapper((StyledFeature) currentFeature, 
+                                                                                       PROVIDER_NAME, 
+                                                                                       PROVIDER_NAME);
+                                        featureCollection.addFeature(currentFeature);
                                     }
                                 }
                             }
@@ -653,29 +801,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 Baum currentBaum = baumModel.getBaumAtRow(i);
                 //Geom geom;
                 if (currentBaum.getGeometry() == null) {
-                    String idValue1 = currentBaum.getLage();
-                    BaumNutzung idValue2 = currentBaum.getBaumNutzung();
-
-                    StringBuffer identifier = new StringBuffer();
-
-                    if (idValue1 != null) {
-                        identifier.append(idValue1);
-                    } else {
-                        identifier.append("keine Lage");
-                    }
-
-                    if (idValue2 != null && idValue2.getBaumKategorie() != null) {
-                        identifier.append(GeometrySlotInformation.SLOT_IDENTIFIER_SEPARATOR + idValue2.getBaumKategorie());
-                    } else {
-                        identifier.append(GeometrySlotInformation.SLOT_IDENTIFIER_SEPARATOR + "keine Nutzung");
-                    }
-
-                    if (idValue2 != null &&  idValue2.getAusgewaehlteAuspraegung() != null) {
-                            identifier.append(GeometrySlotInformation.SLOT_IDENTIFIER_SEPARATOR + idValue2.getAusgewaehlteAuspraegung());
-                    } else {
-                        identifier.append(GeometrySlotInformation.SLOT_IDENTIFIER_SEPARATOR + "keine Ausprägung");
-                    }
-                    result.add(new GeometrySlotInformation(getProviderName(), identifier.toString(), currentBaum, this));
+                    result.add(new GeometrySlotInformation(getProviderName(), this.getIdentifierString(currentBaum), currentBaum, this));
                 }
             }
             return result;
@@ -1192,4 +1318,56 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
     private javax.swing.JTextArea taBemerkung;
     private javax.swing.JTable tblBaum;
     // End of variables declaration//GEN-END:variables
+
+    @Override
+    public String getDisplayName(final BasicEntity entity) {
+        if(entity instanceof Baum)
+        {
+            final Baum baum = (Baum) entity;
+            return this.getProviderName() + 
+                   GeometrySlotInformation.SLOT_IDENTIFIER_SEPARATOR +
+                   this.getIdentifierString(baum);
+        }
+        
+        return Copyable.UNKNOWN_ENTITY;
+    }
+
+    private String getIdentifierString(final Baum baum)
+    {
+        String idValue1 = baum.getLage();
+        BaumNutzung idValue2 = baum.getBaumNutzung();
+
+        StringBuffer identifier = new StringBuffer();
+
+        if (idValue1 != null) {
+            identifier.append(idValue1);
+        } else {
+            identifier.append("keine Lage");
+        }
+
+        if (idValue2 != null && idValue2.getBaumKategorie() != null) {
+            identifier.append(GeometrySlotInformation.SLOT_IDENTIFIER_SEPARATOR + idValue2.getBaumKategorie());
+        } else {
+            identifier.append(GeometrySlotInformation.SLOT_IDENTIFIER_SEPARATOR + "keine Nutzung");
+        }
+
+        if (idValue2 != null &&  idValue2.getAusgewaehlteAuspraegung() != null) {
+                identifier.append(GeometrySlotInformation.SLOT_IDENTIFIER_SEPARATOR + idValue2.getAusgewaehlteAuspraegung());
+        } else {
+            identifier.append(GeometrySlotInformation.SLOT_IDENTIFIER_SEPARATOR + "keine Ausprägung");
+        }
+
+        return identifier.toString();
+    }
+    
+    
+    @Override
+    public Icon getDisplayIcon() {
+        return this.copyDisplayIcon;
+    }
+
+    @Override
+    public boolean knowsDisplayName(BasicEntity entity) {
+        return entity instanceof Baum;
+    }
 }
