@@ -13,19 +13,16 @@ package de.cismet.lagis.ressort.baum;
 
 import org.apache.log4j.Logger;
 
-import org.jdesktop.swingx.JXTable;
-
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.Vector;
+import java.util.*;
 
 import javax.swing.DefaultListModel;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.text.BadLocationException;
+
+import de.cismet.cids.custom.beans.lagis.BaumCustomBean;
+import de.cismet.cids.custom.beans.lagis.BaumKategorieAuspraegungCustomBean;
+import de.cismet.cids.custom.beans.lagis.BaumKategorieCustomBean;
+import de.cismet.cids.custom.beans.lagis.BaumNutzungCustomBean;
 
 import de.cismet.cismap.commons.features.Feature;
 
@@ -71,7 +68,7 @@ public class BaumModel extends AbstractTableModel {
 
     //~ Instance fields --------------------------------------------------------
 
-    Vector<Baum> baeume;
+    Vector<BaumCustomBean> baeume;
 
     private final Logger log = org.apache.log4j.Logger.getLogger(this.getClass());
     private boolean isInEditMode = false;
@@ -85,7 +82,7 @@ public class BaumModel extends AbstractTableModel {
      * Creates a new BaumModel object.
      */
     public BaumModel() {
-        baeume = new Vector<Baum>();
+        baeume = new Vector<BaumCustomBean>();
         initDocumentModels();
         baumMerkmalsModel = new DefaultListModel();
     }
@@ -95,12 +92,12 @@ public class BaumModel extends AbstractTableModel {
      *
      * @param  baeume  DOCUMENT ME!
      */
-    public BaumModel(final Set<Baum> baeume) {
+    public BaumModel(final Collection<BaumCustomBean> baeume) {
         try {
-            this.baeume = new Vector<Baum>(baeume);
+            this.baeume = new Vector<BaumCustomBean>(baeume);
         } catch (Exception ex) {
             log.error("Fehler beim anlegen des Models", ex);
-            this.baeume = new Vector<Baum>();
+            this.baeume = new Vector<BaumCustomBean>();
         }
         initDocumentModels();
         baumMerkmalsModel = new DefaultListModel();
@@ -126,6 +123,11 @@ public class BaumModel extends AbstractTableModel {
     @Override
     public Object getValueAt(final int rowIndex, final int columnIndex) {
         try {
+            if (rowIndex >= baeume.size()) {
+                log.warn("Cannot access row " + rowIndex + ". There are just " + baeume.size() + " rows.");
+                return null;
+            }
+
             final Baum value = baeume.get(rowIndex);
             switch (columnIndex) {
                 case LAGE_COLUMN: {
@@ -182,7 +184,7 @@ public class BaumModel extends AbstractTableModel {
      *
      * @param  baum  DOCUMENT ME!
      */
-    public void addBaum(final Baum baum) {
+    public void addBaum(final BaumCustomBean baum) {
         baeume.add(baum);
     }
 
@@ -193,7 +195,7 @@ public class BaumModel extends AbstractTableModel {
      *
      * @return  DOCUMENT ME!
      */
-    public Baum getBaumAtRow(final int rowIndex) {
+    public BaumCustomBean getBaumAtRow(final int rowIndex) {
         return baeume.get(rowIndex);
     }
 
@@ -249,7 +251,7 @@ public class BaumModel extends AbstractTableModel {
     public Vector<Feature> getAllBaumFeatures() {
         final Vector<Feature> tmp = new Vector<Feature>();
         if (baeume != null) {
-            final Iterator<Baum> it = baeume.iterator();
+            final Iterator<BaumCustomBean> it = baeume.iterator();
             while (it.hasNext()) {
                 final Baum curBaum = it.next();
                 if (curBaum.getGeometry() != null) {
@@ -267,15 +269,15 @@ public class BaumModel extends AbstractTableModel {
      *
      * @param  baeume  DOCUMENT ME!
      */
-    public void refreshTableModel(final Set<Baum> baeume) {
+    public void refreshTableModel(final Collection<BaumCustomBean> baeume) {
         try {
             if (log.isDebugEnabled()) {
                 log.debug("Refresh des BaeumeTableModell");
             }
-            this.baeume = new Vector<Baum>(baeume);
+            this.baeume = new Vector<BaumCustomBean>(baeume);
         } catch (Exception ex) {
             log.error("Fehler beim refreshen des Models", ex);
-            this.baeume = new Vector<Baum>();
+            this.baeume = new Vector<BaumCustomBean>();
         }
         fireTableDataChanged();
     }
@@ -285,7 +287,7 @@ public class BaumModel extends AbstractTableModel {
      *
      * @return  DOCUMENT ME!
      */
-    public Vector<Baum> getAllBaeume() {
+    public Vector<BaumCustomBean> getAllBaeume() {
         return baeume;
     }
 
@@ -324,11 +326,11 @@ public class BaumModel extends AbstractTableModel {
                     }
 
                     if (value.getBaumNutzung() == null) {
-                        value.setBaumNutzung(new BaumNutzung());
-                        value.getBaumNutzung().setBaumKategorie((BaumKategorie)aValue);
+                        value.setBaumNutzung(BaumNutzungCustomBean.createNew());
+                        value.getBaumNutzung().setBaumKategorie((BaumKategorieCustomBean)aValue);
                         if ((aValue != null) && (((BaumKategorie)aValue).getKategorieAuspraegungen() != null)
                                     && (((BaumKategorie)aValue).getKategorieAuspraegungen().size() == 1)) {
-                            for (final BaumKategorieAuspraegung currentAuspraegung
+                            for (final BaumKategorieAuspraegungCustomBean currentAuspraegung
                                         : ((BaumKategorie)aValue).getKategorieAuspraegungen()) {
                                 value.getBaumNutzung().setAusgewaehlteAuspraegung(currentAuspraegung);
                             }
@@ -343,10 +345,10 @@ public class BaumModel extends AbstractTableModel {
                                 value.getBaumNutzung().setAusgewaehlteAuspraegung(null);
                             }
                         }
-                        value.getBaumNutzung().setBaumKategorie((BaumKategorie)aValue);
+                        value.getBaumNutzung().setBaumKategorie((BaumKategorieCustomBean)aValue);
                         if ((aValue != null) && (((BaumKategorie)aValue).getKategorieAuspraegungen() != null)
                                     && (((BaumKategorie)aValue).getKategorieAuspraegungen().size() == 1)) {
-                            for (final BaumKategorieAuspraegung currentAuspraegung
+                            for (final BaumKategorieAuspraegungCustomBean currentAuspraegung
                                         : ((BaumKategorie)aValue).getKategorieAuspraegungen()) {
                                 value.getBaumNutzung().setAusgewaehlteAuspraegung(currentAuspraegung);
                             }
@@ -362,12 +364,12 @@ public class BaumModel extends AbstractTableModel {
                         if (log.isDebugEnabled()) {
                             log.debug("Nutzung == null --> new BaumNutzung");
                         }
-                        value.setBaumNutzung(new BaumNutzung());
+                        value.setBaumNutzung(BaumNutzungCustomBean.createNew());
                     } else if ((aValue != null) && (aValue instanceof BaumKategorieAuspraegung)) {
                         if (log.isDebugEnabled()) {
                             log.debug("instance of BaumKategorieAuspraegung");
                         }
-                        value.getBaumNutzung().setAusgewaehlteAuspraegung((BaumKategorieAuspraegung)aValue);
+                        value.getBaumNutzung().setAusgewaehlteAuspraegung((BaumKategorieAuspraegungCustomBean)aValue);
                     } else if ((aValue != null) && (aValue instanceof Integer)) {
                         if (log.isDebugEnabled()) {
                             log.debug("instance of integer");

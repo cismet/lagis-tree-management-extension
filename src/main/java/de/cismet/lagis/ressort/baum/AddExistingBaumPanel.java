@@ -16,6 +16,7 @@ import org.apache.log4j.Logger;
 
 import org.jdesktop.swingx.JXTable;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -24,7 +25,10 @@ import javax.swing.ListModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import de.cismet.lagis.broker.EJBroker;
+import de.cismet.cids.custom.beans.lagis.BaumCustomBean;
+import de.cismet.cids.custom.beans.lagis.FlurstueckSchluesselCustomBean;
+
+import de.cismet.lagis.broker.CidsBroker;
 import de.cismet.lagis.broker.LagisBroker;
 
 import de.cismet.lagis.gui.panels.*;
@@ -113,12 +117,12 @@ public class AddExistingBaumPanel extends javax.swing.JPanel implements Validati
             log.debug("Validation Status: " + flurstueckChooser1.getStatus());
         }
         if (flurstueckChooser1.getStatus() == flurstueckChooser1.VALID) {
-            final FlurstueckSchluessel currentKey = flurstueckChooser1.getCurrentFlurstueckSchluessel();
-            final Set<Baum> baeume = EJBroker.getInstance().getBaumForKey(currentKey);
+            final FlurstueckSchluesselCustomBean currentKey = flurstueckChooser1.getCurrentFlurstueckSchluessel();
+            final Collection<BaumCustomBean> baeume = CidsBroker.getInstance().getBaumForKey(currentKey);
             if (baeume != null) {
                 // Check if the Contract ist already  added
                 // if(currentFlurstueck != null && currentFlurstueck.getVertraege() != null){
-                final Iterator<Baum> it = currentBaumTabelModel.getAllBaeume().iterator();
+                final Iterator<BaumCustomBean> it = currentBaumTabelModel.getAllBaeume().iterator();
                 while (it.hasNext()) {
                     final Baum curBaum = it.next();
                     if (baeume.contains(curBaum)) {
@@ -257,15 +261,17 @@ public class AddExistingBaumPanel extends javax.swing.JPanel implements Validati
     private void btnOKActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnOKActionPerformed
         final int[] selectedRows = tblBaum.getSelectedRows();
         for (int i = 0; i < selectedRows.length; i++) {
-            final Baum curBaum = baumModel.getBaumAtRow(((JXTable)tblBaum).convertRowIndexToModel(selectedRows[i]));
+            final BaumCustomBean curBaum = baumModel.getBaumAtRow(((JXTable)tblBaum).convertRowIndexToModel(
+                        selectedRows[i]));
             currentBaumTabelModel.addBaum(curBaum);
             currentBaumTabelModel.fireTableDataChanged();
-            final Set<FlurstueckSchluessel> crossRefs = EJBroker.getInstance().getCrossReferencesForBaum(curBaum);
+            final Collection<FlurstueckSchluesselCustomBean> crossRefs = CidsBroker.getInstance()
+                        .getCrossReferencesForBaum(curBaum);
             if (crossRefs != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Es sind Querverweise auf die Baeume vorhanden");
                 }
-                final Iterator<FlurstueckSchluessel> it = crossRefs.iterator();
+                final Iterator<FlurstueckSchluesselCustomBean> it = crossRefs.iterator();
                 while (it.hasNext()) {
                     if (log.isDebugEnabled()) {
                         log.debug("Ein Querverweis hinzugefügt");

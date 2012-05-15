@@ -13,6 +13,8 @@ package de.cismet.lagis.ressort.baum;
 
 import javax.swing.JCheckBox;
 
+import de.cismet.cids.custom.beans.lagis.BaumMerkmalCustomBean;
+
 import de.cismet.lagisEE.entity.extension.baum.BaumMerkmal;
 
 /**
@@ -26,7 +28,7 @@ public class MerkmalCheckBox extends JCheckBox {
 
     //~ Instance fields --------------------------------------------------------
 
-    private BaumMerkmal baumMerkmal;
+    private BaumMerkmalCustomBean baumMerkmal;
 
     //~ Constructors -----------------------------------------------------------
 
@@ -35,7 +37,7 @@ public class MerkmalCheckBox extends JCheckBox {
      *
      * @param  baumMerkmal  DOCUMENT ME!
      */
-    public MerkmalCheckBox(final BaumMerkmal baumMerkmal) {
+    public MerkmalCheckBox(final BaumMerkmalCustomBean baumMerkmal) {
         super(baumMerkmal.getBezeichnung());
         this.baumMerkmal = baumMerkmal;
     }
@@ -47,7 +49,7 @@ public class MerkmalCheckBox extends JCheckBox {
      *
      * @return  DOCUMENT ME!
      */
-    public BaumMerkmal getBaumMerkmal() {
+    public BaumMerkmalCustomBean getBaumMerkmal() {
         return baumMerkmal;
     }
 }

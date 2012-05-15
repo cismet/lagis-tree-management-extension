@@ -62,6 +62,8 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 
+import de.cismet.cids.custom.beans.lagis.*;
+
 import de.cismet.cismap.commons.features.Feature;
 import de.cismet.cismap.commons.features.FeatureCollection;
 import de.cismet.cismap.commons.features.FeatureCollectionEvent;
@@ -70,7 +72,7 @@ import de.cismet.cismap.commons.features.StyledFeature;
 import de.cismet.cismap.commons.gui.MappingComponent;
 import de.cismet.cismap.commons.gui.StyledFeatureGroupWrapper;
 
-import de.cismet.lagis.broker.EJBroker;
+import de.cismet.lagis.broker.CidsBroker;
 import de.cismet.lagis.broker.LagisBroker;
 
 import de.cismet.lagis.editor.DateEditor;
@@ -215,12 +217,12 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
 
     @Override
     public List<BasicEntity> getCopyData() {
-        final Vector<Baum> allBaeume = this.baumModel.getAllBaeume();
+        final Vector<BaumCustomBean> allBaeume = this.baumModel.getAllBaeume();
         final ArrayList<BasicEntity> result = new ArrayList<BasicEntity>(allBaeume.size());
 
-        Baum tmp;
-        for (final Baum baum : allBaeume) {
-            tmp = new Baum();
+        BaumCustomBean tmp;
+        for (final BaumCustomBean baum : allBaeume) {
+            tmp = BaumCustomBean.createNew();
 
             tmp.setAlteNutzung(baum.getAlteNutzung());
             tmp.setAuftragnehmer(baum.getAuftragnehmer());
@@ -261,12 +263,12 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         }
 
         if (item instanceof Baum) {
-            final Vector<Baum> residentBaeume = this.baumModel.getAllBaeume();
+            final Vector<BaumCustomBean> residentBaeume = this.baumModel.getAllBaeume();
 
             if (residentBaeume.contains(item)) {
                 log.warn("Baum " + item + " does already exist in Flurstück " + this.currentFlurstueck);
             } else {
-                this.baumModel.addBaum((Baum)item);
+                this.baumModel.addBaum((BaumCustomBean)item);
                 this.baumModel.fireTableDataChanged();
 
                 final MappingComponent mc = LagisBroker.getInstance().getMappingComponent();
@@ -287,7 +289,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
             return;
         }
 
-        final Vector<Baum> residentBaeume = this.baumModel.getAllBaeume();
+        final Vector<BaumCustomBean> residentBaeume = this.baumModel.getAllBaeume();
         final int rowCountBefore = this.baumModel.getRowCount();
 
         final MappingComponent mc = LagisBroker.getInstance().getMappingComponent();
@@ -300,7 +302,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                     log.warn("Verwaltungsbereich " + entity + " does already exist in Flurstück "
                                 + this.currentFlurstueck);
                 } else {
-                    this.baumModel.addBaum((Baum)entity);
+                    this.baumModel.addBaum((BaumCustomBean)entity);
                     wrapper = new StyledFeatureGroupWrapper((StyledFeature)entity, PROVIDER_NAME, PROVIDER_NAME);
                     fc.addFeature(wrapper);
                 }
@@ -399,7 +401,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         final JComboBox combo = new JComboBox();
         combo.setBorder(new javax.swing.border.EmptyBorder(0, 0, 0, 0));
         combo.setEditable(true);
-        final Set<BaumKategorie> alleKategorien = EJBroker.getInstance().getAllBaumKategorien();
+        final Collection<BaumKategorieCustomBean> alleKategorien = CidsBroker.getInstance().getAllBaumKategorien();
         for (final BaumKategorie currentKategorie : alleKategorien) {
             combo.addItem(currentKategorie);
         }
@@ -426,10 +428,10 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
 
         enableSlaveComponents(false);
         // lstMerkmale.setm
-        final Set<BaumMerkmal> baumMerkmal = EJBroker.getInstance().getAllBaumMerkmale();
+        final Collection<BaumMerkmalCustomBean> baumMerkmal = CidsBroker.getInstance().getAllBaumMerkmale();
         final Vector<MerkmalCheckBox> merkmalCheckBoxes = new Vector<MerkmalCheckBox>();
         if ((baumMerkmal != null) && (baumMerkmal.size() > 0)) {
-            for (final BaumMerkmal currentMerkmal : baumMerkmal) {
+            for (final BaumMerkmalCustomBean currentMerkmal : baumMerkmal) {
                 if ((currentMerkmal != null) && (currentMerkmal.getBezeichnung() != null)) {
                     final MerkmalCheckBox newMerkmalCheckBox = new MerkmalCheckBox(currentMerkmal);
                     setOpaqueRecursive(newMerkmalCheckBox.getComponents());
@@ -491,7 +493,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
             if (log.isDebugEnabled()) {
                 log.debug("Ausprägungen sind vorhanden");
             }
-            final Set<BaumKategorieAuspraegung> auspraegungen = mp.getBaumNutzung()
+            final Collection<BaumKategorieAuspraegungCustomBean> auspraegungen = mp.getBaumNutzung()
                         .getBaumKategorie()
                         .getKategorieAuspraegungen();
             for (final BaumKategorieAuspraegung currentAuspraegung : auspraegungen) {
@@ -550,7 +552,8 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                             cleanup();
                             return;
                         }
-                        final Set<FlurstueckSchluessel> crossRefs = getCurrentObject().getBaeumeQuerverweise();
+                        final Collection<FlurstueckSchluesselCustomBean> crossRefs = getCurrentObject()
+                                    .getBaeumeQuerverweise();
                         if ((crossRefs != null) && (crossRefs.size() > 0)) {
                             lstCrossRefs.setModel(new DefaultUniqueListModel(crossRefs));
                         }
@@ -612,7 +615,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         }
         baumModel.clearSlaveComponents();
         deselectAllListEntries();
-        baumModel.refreshTableModel(new HashSet<Baum>());
+        baumModel.refreshTableModel(new HashSet<BaumCustomBean>());
         lstCrossRefs.setModel(new DefaultUniqueListModel());
         if (EventQueue.isDispatchThread()) {
             lstCrossRefs.updateUI();
@@ -688,7 +691,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
     }
 
     @Override
-    public void flurstueckChanged(final Flurstueck newFlurstueck) {
+    public void flurstueckChanged(final FlurstueckCustomBean newFlurstueck) {
         try {
             log.info("FlurstueckChanged");
             currentFlurstueck = newFlurstueck;
@@ -700,8 +703,8 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
     }
 
     @Override
-    public void updateFlurstueckForSaving(final Flurstueck flurstueck) {
-        final Set<Baum> baeume = flurstueck.getBaeume();
+    public void updateFlurstueckForSaving(final FlurstueckCustomBean flurstueck) {
+        final Collection<BaumCustomBean> baeume = flurstueck.getBaeume();
         if (log.isDebugEnabled()) {
             log.debug("Anzahl baeume aktuell gespeichert im Flurstück");
             log.debug("Anzahl Baueme im tablemodel: " + baumModel.getAllBaeume().size());
@@ -752,7 +755,8 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
             }
         } else if (source instanceof JList) {
             if (e.getClickCount() > 1) {
-                final FlurstueckSchluessel key = (FlurstueckSchluessel)lstCrossRefs.getSelectedValue();
+                final FlurstueckSchluesselCustomBean key = (FlurstueckSchluesselCustomBean)
+                    lstCrossRefs.getSelectedValue();
                 if (key != null) {
                     LagisBroker.getInstance().loadFlurstueck(key);
                 }
@@ -818,7 +822,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                         // }
                     }
                 }
-                final Set<BaumMerkmal> merkmale = selectedBaum.getBaumMerkmal();
+                final Collection<BaumMerkmalCustomBean> merkmale = selectedBaum.getBaumMerkmal();
                 if (merkmale != null) {
                     if (log.isDebugEnabled()) {
                         log.debug("Merkmale vorhanden");
@@ -913,7 +917,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
             return Validatable.ERROR;
         }
 
-        final Vector<Baum> baeume = baumModel.getAllBaeume();
+        final Vector<BaumCustomBean> baeume = baumModel.getAllBaeume();
         if ((baeume != null) || (baeume.size() > 0)) {
             for (final Baum currentBaum : baeume) {
                 if ((currentBaum != null)
@@ -955,13 +959,13 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         // TODO use Constants from Java
         final MerkmalCheckBox checkBox = (MerkmalCheckBox)e.getSource();
         if (tblBaum.getSelectedRow() != -1) {
-            final Baum baum = baumModel.getBaumAtRow(((JXTable)tblBaum).getFilters().convertRowIndexToModel(
+            final BaumCustomBean baum = baumModel.getBaumAtRow(((JXTable)tblBaum).getFilters().convertRowIndexToModel(
                         tblBaum.getSelectedRow()));
             if (baum != null) {
-                Set<BaumMerkmal> merkmale = baum.getBaumMerkmal();
+                Collection<BaumMerkmalCustomBean> merkmale = baum.getBaumMerkmal();
                 if (merkmale == null) {
                     log.info("neues Hibernateset für Merkmale angelegt");
-                    merkmale = new HashSet<BaumMerkmal>();
+                    merkmale = new HashSet<BaumMerkmalCustomBean>();
                     baum.setBaumMerkmal(merkmale);
                 }
 
@@ -1488,7 +1492,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
      * @param  evt  DOCUMENT ME!
      */
     private void btnAddBaumActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnAddBaumActionPerformed
-        final Baum tmpBaum = new Baum();
+        final BaumCustomBean tmpBaum = BaumCustomBean.createNew();
         baumModel.addBaum(tmpBaum);
         baumModel.fireTableDataChanged();
     }                                                                              //GEN-LAST:event_btnAddBaumActionPerformed
@@ -1535,7 +1539,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         if (log.isDebugEnabled()) {
             log.debug("Update der Querverweise");
         }
-        final Set<FlurstueckSchluessel> crossRefs = EJBroker.getInstance()
+        final Collection<FlurstueckSchluesselCustomBean> crossRefs = CidsBroker.getInstance()
                     .getCrossreferencesForBaeume(new HashSet(baumModel.getAllBaeume()));
         final DefaultUniqueListModel newModel = new DefaultUniqueListModel();
         if (crossRefs != null) {
@@ -1543,7 +1547,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 log.debug("Es sind Querverweise auf Baeume vorhanden");
             }
             currentFlurstueck.setVertraegeQuerverweise(crossRefs);
-            final Iterator<FlurstueckSchluessel> it = crossRefs.iterator();
+            final Iterator<FlurstueckSchluesselCustomBean> it = crossRefs.iterator();
             while (it.hasNext()) {
                 if (log.isDebugEnabled()) {
                     log.debug("Ein Querverweis hinzugefügt");
