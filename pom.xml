@@ -1,29 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>de.cismet</groupId>
         <artifactId>cismet-parent</artifactId>
-        <version>1.2.6</version>
+        <version>2.0-SNAPSHOT</version>
     </parent>
 
 
     <groupId>de.cismet.lagis.plugin</groupId>
     <artifactId>ressort-erweiterung-baum</artifactId>
+    <version>2.0-SNAPSHOT</version>    
     <packaging>jar</packaging>
-    <version>1.0-SNAPSHOT</version>    
 
     <name>Ressort Erweiterung Baum</name>
     <description>!!! description pending !!!</description>
+
+    <prerequisites>
+        <maven>3</maven>
+    </prerequisites>
+
+    <scm>
+        <connection>https://github.com/cismet/lagis-tree-management-extension.git</connection>
+        <developerConnection>scm:git:git@github.com:cismet/lagis-tree-management-extension.git</developerConnection>
+        <url>https://github.com/cismet/lagis-tree-management-extension</url>
+    </scm>
+
+    <repositories>
+        <repository>
+            <id>cismet-repo</id>
+            <url>https://repo.cismet.de/repo</url>
+            <releases>
+                <enabled>true</enabled>
+                <checksumPolicy>warn</checksumPolicy>
+                <updatePolicy>daily</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <checksumPolicy>warn</checksumPolicy>
+                <updatePolicy>interval:60</updatePolicy>
+            </snapshots>
+        </repository>
+    </repositories>
+
 
     <dependencies>
         <dependency>
             <groupId>de.cismet.lagis</groupId>
             <artifactId>lagis-client</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>2.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
-    
 </project>
