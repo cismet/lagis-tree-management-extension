@@ -83,7 +83,6 @@ public class BaumModel extends CidsBeanTableModel_Lagis {
     //~ Instance fields --------------------------------------------------------
 
     private final Logger log = org.apache.log4j.Logger.getLogger(this.getClass());
-    private boolean isInEditMode = false;
     private SimpleDocumentModel bemerkungDocumentModel;
     private Baum currentSelectedBaum = null;
 
@@ -184,7 +183,7 @@ public class BaumModel extends CidsBeanTableModel_Lagis {
 
     @Override
     public boolean isCellEditable(final int rowIndex, final int columnIndex) {
-        if ((COLUMN_HEADER.length > columnIndex) && (getRowCount() > rowIndex) && isInEditMode) {
+        if ((COLUMN_HEADER.length > columnIndex) && (getRowCount() > rowIndex) && isInEditMode()) {
             if (columnIndex == AUSPRAEGUNG_COLUMN) {
                 final Baum currentBaum = getCidsBeanAtRow(rowIndex);
                 if (((currentBaum != null) && (currentBaum.getBaumNutzung() != null)
