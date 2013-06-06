@@ -27,8 +27,8 @@ import de.cismet.cids.custom.beans.lagis.BaumNutzungCustomBean;
 import de.cismet.cismap.commons.features.Feature;
 
 import de.cismet.lagis.broker.LagisBroker;
-import de.cismet.lagis.models.CidsBeanTableModel_Lagis;
 
+import de.cismet.lagis.models.CidsBeanTableModel_Lagis;
 import de.cismet.lagis.models.documents.SimpleDocumentModel;
 
 import de.cismet.lagisEE.entity.extension.baum.Baum;
@@ -57,8 +57,8 @@ public class BaumModel extends CidsBeanTableModel_Lagis {
             "Erfassungsdatum",
             "Fälldatum",
         };
-    
-        private static final Class[] COLUMN_CLASSES = {
+
+    private static final Class[] COLUMN_CLASSES = {
             String.class,
             String.class,
             Integer.class,
@@ -81,8 +81,6 @@ public class BaumModel extends CidsBeanTableModel_Lagis {
     public static final int FAELLDATUM_COLUMN = 8;
 
     //~ Instance fields --------------------------------------------------------
-
-    //private Vector<BaumCustomBean> baeume;
 
     private final Logger log = org.apache.log4j.Logger.getLogger(this.getClass());
     private boolean isInEditMode = false;
@@ -214,7 +212,7 @@ public class BaumModel extends CidsBeanTableModel_Lagis {
     public ArrayList<Feature> getAllBaumFeatures() {
         final ArrayList<Feature> tmp = new ArrayList<Feature>();
         if (getCidsBeans() != null) {
-            final Iterator<BaumCustomBean> it = (Iterator<BaumCustomBean>) getCidsBeans().iterator();
+            final Iterator<BaumCustomBean> it = (Iterator<BaumCustomBean>)getCidsBeans().iterator();
             while (it.hasNext()) {
                 final Baum curBaum = it.next();
                 if (curBaum.getGeometry() != null) {
@@ -351,7 +349,6 @@ public class BaumModel extends CidsBeanTableModel_Lagis {
             log.error("Fehler beim setzen von Daten in dem Modell: Zeile: " + rowIndex + " Spalte" + columnIndex, ex);
         }
     }
-
 
     /**
      * DOCUMENT ME!

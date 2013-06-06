@@ -142,13 +142,16 @@
                 </Property>
               </Properties>
               <AuxValues>
-                <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new JXTable();"/>
+                <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new BaumTable();"/>
               </AuxValues>
             </Component>
           </SubComponents>
         </Container>
         <Component class="javax.swing.JButton" name="btnAddBaum">
           <Properties>
+            <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+              <Connection code="((BaumTable)tblBaum).getAddAction()" type="code"/>
+            </Property>
             <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
               <Image iconType="3" name="/de/cismet/lagis/ressource/icons/buttons/add.png"/>
             </Property>
@@ -158,12 +161,12 @@
             <Property name="borderPainted" type="boolean" value="false"/>
             <Property name="focusPainted" type="boolean" value="false"/>
           </Properties>
-          <Events>
-            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnAddBaumActionPerformed"/>
-          </Events>
         </Component>
         <Component class="javax.swing.JButton" name="btnRemoveBaum">
           <Properties>
+            <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+              <Connection code="((BaumTable)tblBaum).getRemoveAction()" type="code"/>
+            </Property>
             <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
               <Image iconType="3" name="/de/cismet/lagis/ressource/icons/buttons/remove.png"/>
             </Property>

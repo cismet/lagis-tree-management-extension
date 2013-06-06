@@ -80,6 +80,7 @@ import de.cismet.lagis.editor.DateEditor;
 import de.cismet.lagis.gui.checkbox.JCheckBoxList;
 import de.cismet.lagis.gui.copypaste.Copyable;
 import de.cismet.lagis.gui.copypaste.Pasteable;
+import de.cismet.lagis.gui.tables.RemoveActionHelper;
 
 import de.cismet.lagis.interfaces.FeatureSelectionChangedListener;
 import de.cismet.lagis.interfaces.FlurstueckChangeListener;
@@ -92,6 +93,8 @@ import de.cismet.lagis.renderer.DateRenderer;
 import de.cismet.lagis.renderer.FlurstueckSchluesselRenderer;
 
 import de.cismet.lagis.thread.BackgroundUpdateThread;
+
+import de.cismet.lagis.util.TableSelectionUtils;
 
 import de.cismet.lagis.utillity.GeometrySlotInformation;
 
@@ -130,7 +133,8 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
     FeatureCollectionListener,
     TableModelListener,
     Copyable,
-    Pasteable {
+    Pasteable,
+    RemoveActionHelper {
 
     //~ Static fields/initializers ---------------------------------------------
 
@@ -219,7 +223,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
 
     @Override
     public List<BasicEntity> getCopyData() {
-        final ArrayList<BaumCustomBean> allBaeume = (ArrayList<BaumCustomBean>) this.baumModel.getCidsBeans();
+        final ArrayList<BaumCustomBean> allBaeume = (ArrayList<BaumCustomBean>)this.baumModel.getCidsBeans();
         final ArrayList<BasicEntity> result = new ArrayList<BasicEntity>(allBaeume.size());
 
         BaumCustomBean tmp;
@@ -265,7 +269,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         }
 
         if (item instanceof Baum) {
-            final ArrayList<BaumCustomBean> residentBaeume = (ArrayList<BaumCustomBean>) this.baumModel.getCidsBeans();
+            final ArrayList<BaumCustomBean> residentBaeume = (ArrayList<BaumCustomBean>)this.baumModel.getCidsBeans();
 
             if (residentBaeume.contains(item)) {
                 log.warn("Baum " + item + " does already exist in Flurstück " + this.currentFlurstueck);
@@ -290,7 +294,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
             return;
         }
 
-        final ArrayList<BaumCustomBean> residentBaeume = (ArrayList<BaumCustomBean>) this.baumModel.getCidsBeans();
+        final ArrayList<BaumCustomBean> residentBaeume = (ArrayList<BaumCustomBean>)this.baumModel.getCidsBeans();
         final int rowCountBefore = this.baumModel.getRowCount();
 
         final MappingComponent mc = LagisBroker.getInstance().getMappingComponent();
@@ -338,7 +342,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
      * DOCUMENT ME!
      */
     private void configureComponents() {
-        tblBaum.setModel(baumModel);
+        TableSelectionUtils.crossReferenceModelAndTable(baumModel, (BaumTable)tblBaum);
         tblBaum.setDefaultEditor(Date.class, new DateEditor());
         tblBaum.setDefaultRenderer(Date.class, new DateRenderer());
         tblBaum.addMouseListener(this);
@@ -918,7 +922,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
             return Validatable.ERROR;
         }
 
-        final ArrayList<BaumCustomBean> baeume = (ArrayList<BaumCustomBean>) baumModel.getCidsBeans();
+        final ArrayList<BaumCustomBean> baeume = (ArrayList<BaumCustomBean>)baumModel.getCidsBeans();
         if ((baeume != null) || (baeume.size() > 0)) {
             for (final Baum currentBaum : baeume) {
                 if ((currentBaum != null)
@@ -960,8 +964,9 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         // TODO use Constants from Java
         final MerkmalCheckBox checkBox = (MerkmalCheckBox)e.getSource();
         if (tblBaum.getSelectedRow() != -1) {
-            final BaumCustomBean baum = baumModel.getCidsBeanAtRow(((JXTable)tblBaum).getFilters().convertRowIndexToModel(
-                        tblBaum.getSelectedRow()));
+            final BaumCustomBean baum = baumModel.getCidsBeanAtRow(((JXTable)tblBaum).getFilters()
+                            .convertRowIndexToModel(
+                                tblBaum.getSelectedRow()));
             if (baum != null) {
                 Collection<BaumMerkmalCustomBean> merkmale = baum.getBaumMerkmal();
                 if (merkmale == null) {
@@ -1046,7 +1051,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
             for (final Feature feature : features) {
                 if (feature instanceof Baum) {
                     // TODO Refactor Name
-                    final int index = baumModel.getIndexOfCidsBean((BaumNutzungCustomBean)feature);
+                    final int index = baumModel.getIndexOfCidsBean((BaumCustomBean)feature);
                     final int displayedIndex = ((JXTable)tblBaum).getFilters().convertRowIndexToView(index);
                     if ((index != -1)
                                 && LagisBroker.getInstance().getMappingComponent().getFeatureCollection().isSelected(
@@ -1102,7 +1107,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         jTabbedPane2 = new javax.swing.JTabbedPane();
         panBaumBordered = new javax.swing.JPanel();
         cpBaum = new javax.swing.JScrollPane();
-        tblBaum = new JXTable();
+        tblBaum = new BaumTable();
         btnAddBaum = new javax.swing.JButton();
         btnRemoveBaum = new javax.swing.JButton();
         btnAddExitingBaum = new javax.swing.JButton();
@@ -1163,19 +1168,14 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 new String[] { "Nummer", "Lage", "Fläche m²", "Nutzung", "Nutzer", "Vertragsbeginn", "Vertragsende" }));
         cpBaum.setViewportView(tblBaum);
 
+        btnAddBaum.setAction(((BaumTable)tblBaum).getAddAction());
         btnAddBaum.setIcon(new javax.swing.ImageIcon(
                 getClass().getResource("/de/cismet/lagis/ressource/icons/buttons/add.png"))); // NOI18N
         btnAddBaum.setBorder(null);
         btnAddBaum.setBorderPainted(false);
         btnAddBaum.setFocusPainted(false);
-        btnAddBaum.addActionListener(new java.awt.event.ActionListener() {
 
-                @Override
-                public void actionPerformed(final java.awt.event.ActionEvent evt) {
-                    btnAddBaumActionPerformed(evt);
-                }
-            });
-
+        btnRemoveBaum.setAction(((BaumTable)tblBaum).getRemoveAction());
         btnRemoveBaum.setIcon(new javax.swing.ImageIcon(
                 getClass().getResource("/de/cismet/lagis/ressource/icons/buttons/remove.png"))); // NOI18N
         btnRemoveBaum.setBorder(null);
@@ -1487,23 +1487,13 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                     javax.swing.GroupLayout.DEFAULT_SIZE,
                     Short.MAX_VALUE).addContainerGap()));
     } // </editor-fold>//GEN-END:initComponents
-    /**
-     * DOCUMENT ME!
-     *
-     * @param  evt  DOCUMENT ME!
-     */
-    private void btnAddBaumActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddBaumActionPerformed
-        final BaumCustomBean tmpBaum = BaumCustomBean.createNew();
-        baumModel.addCidsBean(tmpBaum);
-        baumModel.fireTableDataChanged();
-    }//GEN-LAST:event_btnAddBaumActionPerformed
 
     /**
      * DOCUMENT ME!
      *
      * @param  evt  DOCUMENT ME!
      */
-    private void btnRemoveBaumActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRemoveBaumActionPerformed
+    private void btnRemoveBaumActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnRemoveBaumActionPerformed
         final int currentRow = tblBaum.getSelectedRow();
         if (currentRow != -1) {
             // VerwaltungsTableModel currentModel = (VerwaltungsTableModel)tNutzung.getModel();
@@ -1516,21 +1506,21 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 log.debug("liste ausgeschaltet");
             }
         }
-    }//GEN-LAST:event_btnRemoveBaumActionPerformed
+    } //GEN-LAST:event_btnRemoveBaumActionPerformed
 
     /**
      * DOCUMENT ME!
      *
      * @param  evt  DOCUMENT ME!
      */
-    private void btnAddExitingBaumActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddExitingBaumActionPerformed
+    private void btnAddExitingBaumActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnAddExitingBaumActionPerformed
         final JDialog dialog = new JDialog(LagisBroker.getInstance().getParentComponent(), "", true);
         dialog.add(new AddExistingBaumPanel(currentFlurstueck, baumModel, lstCrossRefs.getModel()));
         dialog.pack();
         dialog.setIconImage(icoExistingContract.getImage());
         dialog.setTitle("Vorhandener Vertrag hinzufügen...");
         StaticSwingTools.showDialog(dialog);
-    }//GEN-LAST:event_btnAddExitingBaumActionPerformed
+    }                                                                                     //GEN-LAST:event_btnAddExitingBaumActionPerformed
 
     /**
      * DOCUMENT ME!
@@ -1663,5 +1653,21 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
     @Override
     public boolean knowsDisplayName(final BasicEntity entity) {
         return entity instanceof Baum;
+    }
+
+    @Override
+    public void duringRemoveAction(final Object source) {
+        updateCrossRefs();
+        enableSlaveComponents(false);
+        deselectAllListEntries();
+        if (log.isDebugEnabled()) {
+            log.debug("liste ausgeschaltet");
+        }
+    }
+
+    @Override
+    public void afterRemoveAction(final Object source) {
+        // is not used at the moment
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }
