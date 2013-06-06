@@ -1298,10 +1298,9 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.ipady = 7;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(3, 0, 3, 2);
+        gridBagConstraints.insets = new java.awt.Insets(10, 0, 3, 2);
         jPanel4.add(jPanel3, gridBagConstraints);
 
         final javax.swing.GroupLayout panBaumBorderedLayout = new javax.swing.GroupLayout(panBaumBordered);
