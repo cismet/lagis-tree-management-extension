@@ -1031,70 +1031,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
     // HINT If there are problems try to remove/add Listselectionlistener at start/end of Method
     @Override
     public void featureSelectionChanged(final Collection<Feature> features) {
-        if (log.isDebugEnabled()) {
-            log.debug("FeatureSelectionChanged", new CurrentStackTrace());
-        }
-        // knaup
-        if (!ignoreFeatureSelectionEvent) {
-            if (features.size() == 0) {
-                return;
-            }
-            final int[] selectedRows = tblBaum.getSelectedRows();
-            if ((selectedRows != null) && (selectedRows.length > 0)) {
-                for (int i = 0; i < selectedRows.length; i++) {
-                    final int modelIndex = ((JXTable)tblBaum).getFilters().convertRowIndexToModel(selectedRows[i]);
-                    if (modelIndex != -1) {
-                        final Baum currentBaum = baumModel.getCidsBeanAtRow(modelIndex);
-                        if ((currentBaum != null) && (currentBaum.getGeometry() == null)) {
-                            tblBaum.getSelectionModel().removeSelectionInterval(selectedRows[i], selectedRows[i]);
-                        }
-                    }
-                }
-            }
-
-            for (final Feature feature : features) {
-                if (feature instanceof Baum) {
-                    // TODO Refactor Name
-                    final int index = baumModel.getIndexOfCidsBean((BaumCustomBean)feature);
-                    final int displayedIndex = ((JXTable)tblBaum).getFilters().convertRowIndexToView(index);
-                    if ((index != -1)
-                                && LagisBroker.getInstance().getMappingComponent().getFeatureCollection().isSelected(
-                                    feature)) {
-                        // tReBe.changeSelection(((JXTable)tReBe).getFilters().convertRowIndexToView(index),0,false,false);
-                        if (feature.getGeometry() != null) {
-                            // ((SimpleBackgroundedJPanel) this.panBackground).setBackgroundEnabled(true);
-                        } else {
-                            if (log.isDebugEnabled()) {
-                                log.debug("SetBackgroundEnabled abgeschaltet: ", new CurrentStackTrace());
-                            }
-                            // ((SimpleBackgroundedJPanel) this.panBackground).setBackgroundEnabled(false);
-                        }
-                        tblBaum.getSelectionModel().addSelectionInterval(displayedIndex, displayedIndex);
-                        final Rectangle tmp = tblBaum.getCellRect(displayedIndex, 0, true);
-                        if (tmp != null) {
-                            tblBaum.scrollRectToVisible(tmp);
-                        }
-                    } else {
-                        tblBaum.getSelectionModel().removeSelectionInterval(displayedIndex, displayedIndex);
-                        if (log.isDebugEnabled()) {
-                            log.debug("SetBackgroundEnabled abgeschaltet: ", new CurrentStackTrace());
-                        }
-                        // war schon ausdokumentiert
-                        // ((SimpleBackgroundedJPanel) this.panBackground).setBackgroundEnabled(false);
-                    }
-                } else {
-                    tblBaum.clearSelection();
-                    if (log.isDebugEnabled()) {
-                        log.debug("SetBackgroundEnabled abgeschaltet: ", new CurrentStackTrace());
-                    }
-                    // ((SimpleBackgroundedJPanel) this.panBackground).setBackgroundEnabled(false);
-                }
-            }
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug("Aktuelles change event wird ignoriert");
-            }
-        }
+        ((BaumTable)tblBaum).featureSelectionChanged(features);
     }
 
     @Override
