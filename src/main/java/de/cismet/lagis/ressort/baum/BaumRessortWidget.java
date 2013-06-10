@@ -868,47 +868,8 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 } else {
                     enableSlaveComponents(isInEditMode);
                 }
-                if ((selectedBaum.getGeometry() != null)
-                            && !mappingComp.getFeatureCollection().isSelected(selectedBaum)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("SelectedBaum hat eine Geometry und ist nicht selektiert --> wird selektiert");
-                    }
-                    ignoreFeatureSelectionEvent = true;
-                    mappingComp.getFeatureCollection().select(selectedBaum);
-                    ignoreFeatureSelectionEvent = false;
-                } else if (selectedBaum.getGeometry() == null) {
-                    if (log.isDebugEnabled()) {
-                        log.debug(
-                            "Keine Baum Geometrie vorhanden die selektiert werden kann, prüfe ob eine Baumm Geometrie selektiert ist");
-                    }
-                    final Collection selectedFeatures = mappingComp.getFeatureCollection().getSelectedFeatures();
-                    if (selectedFeatures != null) {
-                        for (final Object currentObject : selectedFeatures) {
-                            if ((currentObject != null) && (currentObject instanceof Baum)) {
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Eine Baum Geometrie ist selektiert --> deselekt");
-                                }
-                                ignoreFeatureSelectionEvent = true;
-                                mappingComp.getFeatureCollection().unselect((Baum)currentObject);
-                                ignoreFeatureSelectionEvent = false;
-                            }
-                        }
-                    } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug("selected FeatureCollection ist leer");
-                        }
-                    }
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Die Geometrie des selektierten Baeume kann nicht seleketiert werden ");
-                        log.debug("alreadySelected: " + (mappingComp.getFeatureCollection().isSelected(selectedBaum))
-                                    + " hasGeometry: " + (selectedBaum.getGeometry() != null));
-                    }
-                    if (log.isDebugEnabled()) {
-                        log.debug("get Selected Feature: " + mappingComp.getFeatureCollection().getSelectedFeatures());
-                    }
-                }
             }
+            ((BaumTable)tblBaum).valueChanged_updateFeatures(this, e);
         } else {
             btnRemoveBaum.setEnabled(false);
             deselectAllListEntries();
@@ -1493,30 +1454,30 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
      *
      * @param  evt  DOCUMENT ME!
      */
-    private void btnUndoActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnUndoActionPerformed
+    private void btnUndoActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUndoActionPerformed
         // TODO add your handling code here:
-    } //GEN-LAST:event_btnUndoActionPerformed
+    }//GEN-LAST:event_btnUndoActionPerformed
 
     /**
      * DOCUMENT ME!
      *
      * @param  evt  DOCUMENT ME!
      */
-    private void btnAddExitingBaumActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnAddExitingBaumActionPerformed
+    private void btnAddExitingBaumActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddExitingBaumActionPerformed
         final JDialog dialog = new JDialog(LagisBroker.getInstance().getParentComponent(), "", true);
         dialog.add(new AddExistingBaumPanel(currentFlurstueck, baumModel, lstCrossRefs.getModel()));
         dialog.pack();
         dialog.setIconImage(icoExistingContract.getImage());
         dialog.setTitle("Vorhandener Vertrag hinzufügen...");
         StaticSwingTools.showDialog(dialog);
-    }                                                                                     //GEN-LAST:event_btnAddExitingBaumActionPerformed
+    }//GEN-LAST:event_btnAddExitingBaumActionPerformed
 
     /**
      * DOCUMENT ME!
      *
      * @param  evt  DOCUMENT ME!
      */
-    private void btnRemoveBaumActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnRemoveBaumActionPerformed
+    private void btnRemoveBaumActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRemoveBaumActionPerformed
         final int currentRow = tblBaum.getSelectedRow();
         if (currentRow != -1) {
             // VerwaltungsTableModel currentModel = (VerwaltungsTableModel)tNutzung.getModel();
@@ -1529,7 +1490,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 log.debug("liste ausgeschaltet");
             }
         }
-    } //GEN-LAST:event_btnRemoveBaumActionPerformed
+    }//GEN-LAST:event_btnRemoveBaumActionPerformed
 
     /**
      * DOCUMENT ME!
