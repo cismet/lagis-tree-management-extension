@@ -884,19 +884,22 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         }
 
         this.setFeatureSelectionChangedEnabled(false);
+        final int[] selectedRows = tblBaum.getSelectedRows();
         final MappingComponent mappingComp = LagisBroker.getInstance().getMappingComponent();
         boolean firstIteration = true;
         for (final int row : tblBaum.getSelectedRows()) {
             final int index = ((JXTable)tblBaum).getFilters().convertRowIndexToModel(row);
             if ((index != -1)) {
-                final BaumCustomBean selectedReBe = baumModel.getBaumAtRow(index);
-                if ((selectedReBe.getGeometry() != null)) {
+                final BaumCustomBean selectedBaum = baumModel.getBaumAtRow(index);
+                if ((selectedBaum.getGeometry() != null)) {
                     if (firstIteration) {
-                        mappingComp.getFeatureCollection().select(selectedReBe);
+                        mappingComp.getFeatureCollection().select(selectedBaum);
                         firstIteration = false;
                     } else {
-                        mappingComp.getFeatureCollection().addToSelection(selectedReBe);
+                        mappingComp.getFeatureCollection().addToSelection(selectedBaum);
                     }
+                } else if (selectedRows.length == 1) { // if the only selected element has no feature
+                    mappingComp.getFeatureCollection().unselectAll();
                 }
             }
         }
@@ -1454,18 +1457,18 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
      *
      * @param  evt  DOCUMENT ME!
      */
-    private void btnAddBaumActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddBaumActionPerformed
+    private void btnAddBaumActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnAddBaumActionPerformed
         final BaumCustomBean tmpBaum = BaumCustomBean.createNew();
         baumModel.addBaum(tmpBaum);
         baumModel.fireTableDataChanged();
-    }//GEN-LAST:event_btnAddBaumActionPerformed
+    }                                                                              //GEN-LAST:event_btnAddBaumActionPerformed
 
     /**
      * DOCUMENT ME!
      *
      * @param  evt  DOCUMENT ME!
      */
-    private void btnRemoveBaumActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRemoveBaumActionPerformed
+    private void btnRemoveBaumActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnRemoveBaumActionPerformed
         final int currentRow = tblBaum.getSelectedRow();
         if (currentRow != -1) {
             // VerwaltungsTableModel currentModel = (VerwaltungsTableModel)tNutzung.getModel();
@@ -1478,21 +1481,21 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 log.debug("liste ausgeschaltet");
             }
         }
-    }//GEN-LAST:event_btnRemoveBaumActionPerformed
+    } //GEN-LAST:event_btnRemoveBaumActionPerformed
 
     /**
      * DOCUMENT ME!
      *
      * @param  evt  DOCUMENT ME!
      */
-    private void btnAddExitingBaumActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddExitingBaumActionPerformed
+    private void btnAddExitingBaumActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnAddExitingBaumActionPerformed
         final JDialog dialog = new JDialog(LagisBroker.getInstance().getParentComponent(), "", true);
         dialog.add(new AddExistingBaumPanel(currentFlurstueck, baumModel, lstCrossRefs.getModel()));
         dialog.pack();
         dialog.setIconImage(icoExistingContract.getImage());
         dialog.setTitle("Vorhandener Vertrag hinzufügen...");
         StaticSwingTools.showDialog(dialog);
-    }//GEN-LAST:event_btnAddExitingBaumActionPerformed
+    }                                                                                     //GEN-LAST:event_btnAddExitingBaumActionPerformed
 
     /**
      * DOCUMENT ME!
