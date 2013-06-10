@@ -150,7 +150,6 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
     private ImageIcon icoExistingContract = new javax.swing.ImageIcon(getClass().getResource(
                 "/de/cismet/lagis/ressource/icons/toolbar/contract.png"));
     private JComboBox cbxAuspraegung = new JComboBox();
-    private boolean ignoreFeatureSelectionEvent = false;
     private final Icon copyDisplayIcon;
 
     private final ActionListener cboAuspraegungsActionListener = new ActionListener() {
@@ -800,7 +799,6 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         if (log.isDebugEnabled()) {
             log.debug("SelectionChanged Baum");
         }
-        final MappingComponent mappingComp = LagisBroker.getInstance().getMappingComponent();
         final int viewIndex = tblBaum.getSelectedRow();
         if (viewIndex != -1) {
             if (isInEditMode) {
@@ -863,47 +861,8 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 } else {
                     enableSlaveComponents(isInEditMode);
                 }
-                if ((selectedBaum.getGeometry() != null)
-                            && !mappingComp.getFeatureCollection().isSelected(selectedBaum)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("SelectedBaum hat eine Geometry und ist nicht selektiert --> wird selektiert");
-                    }
-                    ignoreFeatureSelectionEvent = true;
-                    mappingComp.getFeatureCollection().select(selectedBaum);
-                    ignoreFeatureSelectionEvent = false;
-                } else if (selectedBaum.getGeometry() == null) {
-                    if (log.isDebugEnabled()) {
-                        log.debug(
-                            "Keine Baum Geometrie vorhanden die selektiert werden kann, prüfe ob eine Baumm Geometrie selektiert ist");
-                    }
-                    final Collection selectedFeatures = mappingComp.getFeatureCollection().getSelectedFeatures();
-                    if (selectedFeatures != null) {
-                        for (final Object currentObject : selectedFeatures) {
-                            if ((currentObject != null) && (currentObject instanceof Baum)) {
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Eine Baum Geometrie ist selektiert --> deselekt");
-                                }
-                                ignoreFeatureSelectionEvent = true;
-                                mappingComp.getFeatureCollection().unselect((Baum)currentObject);
-                                ignoreFeatureSelectionEvent = false;
-                            }
-                        }
-                    } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug("selected FeatureCollection ist leer");
-                        }
-                    }
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Die Geometrie des selektierten Baeume kann nicht seleketiert werden ");
-                        log.debug("alreadySelected: " + (mappingComp.getFeatureCollection().isSelected(selectedBaum))
-                                    + " hasGeometry: " + (selectedBaum.getGeometry() != null));
-                    }
-                    if (log.isDebugEnabled()) {
-                        log.debug("get Selected Feature: " + mappingComp.getFeatureCollection().getSelectedFeatures());
-                    }
-                }
             }
+            valueChanged_updateFeatures(e);
         } else {
             btnRemoveBaum.setEnabled(false);
             deselectAllListEntries();
@@ -912,6 +871,37 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
             return;
         }
         ((JXTable)tblBaum).packAll();
+    }
+
+    /**
+     * DOCUMENT ME!
+     *
+     * @param  e  DOCUMENT ME!
+     */
+    private void valueChanged_updateFeatures(final ListSelectionEvent e) {
+        if (e.getValueIsAdjusting() == true) {
+            return;
+        }
+
+        this.setFeatureSelectionChangedEnabled(false);
+        final MappingComponent mappingComp = LagisBroker.getInstance().getMappingComponent();
+        boolean firstIteration = true;
+        for (final int row : tblBaum.getSelectedRows()) {
+            final int index = ((JXTable)tblBaum).getFilters().convertRowIndexToModel(row);
+            if ((index != -1)) {
+                final BaumCustomBean selectedReBe = baumModel.getBaumAtRow(index);
+                if ((selectedReBe.getGeometry() != null)) {
+                    if (firstIteration) {
+                        mappingComp.getFeatureCollection().select(selectedReBe);
+                        firstIteration = false;
+                    } else {
+                        mappingComp.getFeatureCollection().addToSelection(selectedReBe);
+                    }
+                }
+            }
+        }
+
+        this.setFeatureSelectionChangedEnabled(true);
     }
 
     @Override
