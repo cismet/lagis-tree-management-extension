@@ -164,6 +164,8 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
             }
         };
 
+    private boolean listenerEnabled = true;
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAddBaum;
     private javax.swing.JButton btnAddExitingBaum;
@@ -992,7 +994,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
     // HINT If there are problems try to remove/add Listselectionlistener at start/end of Method
     @Override
     public void featureSelectionChanged(final Collection<Feature> features) {
-        ((BaumTable)tblBaum).featureSelectionChanged(features);
+        ((BaumTable)tblBaum).featureSelectionChanged(this, features);
     }
 
     @Override
@@ -1454,30 +1456,30 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
      *
      * @param  evt  DOCUMENT ME!
      */
-    private void btnUndoActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUndoActionPerformed
+    private void btnUndoActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnUndoActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_btnUndoActionPerformed
+    } //GEN-LAST:event_btnUndoActionPerformed
 
     /**
      * DOCUMENT ME!
      *
      * @param  evt  DOCUMENT ME!
      */
-    private void btnAddExitingBaumActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddExitingBaumActionPerformed
+    private void btnAddExitingBaumActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnAddExitingBaumActionPerformed
         final JDialog dialog = new JDialog(LagisBroker.getInstance().getParentComponent(), "", true);
         dialog.add(new AddExistingBaumPanel(currentFlurstueck, baumModel, lstCrossRefs.getModel()));
         dialog.pack();
         dialog.setIconImage(icoExistingContract.getImage());
         dialog.setTitle("Vorhandener Vertrag hinzufügen...");
         StaticSwingTools.showDialog(dialog);
-    }//GEN-LAST:event_btnAddExitingBaumActionPerformed
+    }                                                                                     //GEN-LAST:event_btnAddExitingBaumActionPerformed
 
     /**
      * DOCUMENT ME!
      *
      * @param  evt  DOCUMENT ME!
      */
-    private void btnRemoveBaumActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRemoveBaumActionPerformed
+    private void btnRemoveBaumActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnRemoveBaumActionPerformed
         final int currentRow = tblBaum.getSelectedRow();
         if (currentRow != -1) {
             // VerwaltungsTableModel currentModel = (VerwaltungsTableModel)tNutzung.getModel();
@@ -1490,7 +1492,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 log.debug("liste ausgeschaltet");
             }
         }
-    }//GEN-LAST:event_btnRemoveBaumActionPerformed
+    } //GEN-LAST:event_btnRemoveBaumActionPerformed
 
     /**
      * DOCUMENT ME!
@@ -1639,5 +1641,14 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
     public void afterRemoveAction(final Object source) {
         // is not used at the moment
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+    @Override
+    public boolean isFeatureSelectionChangedEnabled() {
+        return listenerEnabled;
+    }
+
+    @Override
+    public void setFeatureSelectionChangedEnabled(final boolean listenerEnabled) {
+        this.listenerEnabled = listenerEnabled;
     }
 }
