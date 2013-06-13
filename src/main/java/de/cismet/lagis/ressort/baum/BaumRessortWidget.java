@@ -994,7 +994,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
     // HINT If there are problems try to remove/add Listselectionlistener at start/end of Method
     @Override
     public void featureSelectionChanged(final Collection<Feature> features) {
-        ((BaumTable)tblBaum).featureSelectionChanged(this, features);
+        ((BaumTable)tblBaum).featureSelectionChanged(this, features, BaumCustomBean.class);
     }
 
     @Override
