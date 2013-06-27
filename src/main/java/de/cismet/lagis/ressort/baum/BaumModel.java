@@ -28,6 +28,7 @@ import de.cismet.cismap.commons.features.Feature;
 
 import de.cismet.lagis.broker.LagisBroker;
 
+import de.cismet.lagis.models.CidsBeanTableModel_Lagis;
 import de.cismet.lagis.models.documents.SimpleDocumentModel;
 
 import de.cismet.lagisEE.entity.extension.baum.Baum;
@@ -41,7 +42,7 @@ import de.cismet.lagisEE.entity.extension.baum.BaumNutzung;
  * @author   Sebastian Puhl
  * @version  $Revision$, $Date$
  */
-public class BaumModel extends AbstractTableModel {
+public class BaumModel extends CidsBeanTableModel_Lagis {
 
     //~ Static fields/initializers ---------------------------------------------
 
@@ -56,6 +57,19 @@ public class BaumModel extends AbstractTableModel {
             "Erfassungsdatum",
             "Fälldatum",
         };
+
+    private static final Class[] COLUMN_CLASSES = {
+            String.class,
+            String.class,
+            Integer.class,
+            String.class,
+            BaumNutzung.class,
+            Object.class,
+            String.class,
+            Date.class,
+            Date.class
+        };
+
     public static final int LAGE_COLUMN = 0;
     public static final int BAUMNUMMER_COLUMN = 1;
     public static final int FLAECHE_COLUMN = 2;
@@ -68,13 +82,9 @@ public class BaumModel extends AbstractTableModel {
 
     //~ Instance fields --------------------------------------------------------
 
-    Vector<BaumCustomBean> baeume;
-
     private final Logger log = org.apache.log4j.Logger.getLogger(this.getClass());
-    private boolean isInEditMode = false;
     private SimpleDocumentModel bemerkungDocumentModel;
     private Baum currentSelectedBaum = null;
-    private DefaultListModel baumMerkmalsModel;
 
     //~ Constructors -----------------------------------------------------------
 
@@ -82,9 +92,8 @@ public class BaumModel extends AbstractTableModel {
      * Creates a new BaumModel object.
      */
     public BaumModel() {
-        baeume = new Vector<BaumCustomBean>();
+        super(COLUMN_HEADER, COLUMN_CLASSES, BaumCustomBean.class);
         initDocumentModels();
-        baumMerkmalsModel = new DefaultListModel();
     }
 
     /**
@@ -93,42 +102,21 @@ public class BaumModel extends AbstractTableModel {
      * @param  baeume  DOCUMENT ME!
      */
     public BaumModel(final Collection<BaumCustomBean> baeume) {
-        try {
-            this.baeume = new Vector<BaumCustomBean>(baeume);
-        } catch (Exception ex) {
-            log.error("Fehler beim anlegen des Models", ex);
-            this.baeume = new Vector<BaumCustomBean>();
-        }
+        super(COLUMN_HEADER, COLUMN_CLASSES, baeume);
         initDocumentModels();
-        baumMerkmalsModel = new DefaultListModel();
     }
 
     //~ Methods ----------------------------------------------------------------
 
     @Override
-    public int getColumnCount() {
-        return COLUMN_HEADER.length;
-    }
-
-    @Override
-    public int getRowCount() {
-        return baeume.size();
-    }
-
-    @Override
-    public String getColumnName(final int column) {
-        return COLUMN_HEADER[column];
-    }
-
-    @Override
     public Object getValueAt(final int rowIndex, final int columnIndex) {
         try {
-            if (rowIndex >= baeume.size()) {
-                log.warn("Cannot access row " + rowIndex + ". There are just " + baeume.size() + " rows.");
+            if (rowIndex >= getRowCount()) {
+                log.warn("Cannot access row " + rowIndex + ". There are just " + getRowCount() + " rows.");
                 return null;
             }
 
-            final Baum value = baeume.get(rowIndex);
+            final Baum value = getCidsBeanAtRow(rowIndex);
             switch (columnIndex) {
                 case LAGE_COLUMN: {
                     return value.getLage();
@@ -182,41 +170,22 @@ public class BaumModel extends AbstractTableModel {
     /**
      * DOCUMENT ME!
      *
-     * @param  baum  DOCUMENT ME!
-     */
-    public void addBaum(final BaumCustomBean baum) {
-        baeume.add(baum);
-    }
-
-    /**
-     * DOCUMENT ME!
-     *
-     * @param   rowIndex  DOCUMENT ME!
-     *
-     * @return  DOCUMENT ME!
-     */
-    public BaumCustomBean getBaumAtRow(final int rowIndex) {
-        return baeume.get(rowIndex);
-    }
-
-    /**
-     * DOCUMENT ME!
-     *
      * @param  rowIndex  DOCUMENT ME!
      */
-    public void removeBaum(final int rowIndex) {
-        final Baum baum = baeume.get(rowIndex);
+    @Override
+    public void removeCidsBean(final int rowIndex) {
+        final Baum baum = getCidsBeanAtRow(rowIndex);
         if ((baum != null) && (baum.getGeometry() != null)) {
             LagisBroker.getInstance().getMappingComponent().getFeatureCollection().removeFeature(baum);
         }
-        baeume.remove(rowIndex);
+        super.removeCidsBean(rowIndex);
     }
 
     @Override
     public boolean isCellEditable(final int rowIndex, final int columnIndex) {
-        if ((COLUMN_HEADER.length > columnIndex) && (baeume.size() > rowIndex) && isInEditMode) {
+        if ((COLUMN_HEADER.length > columnIndex) && (getRowCount() > rowIndex) && isInEditMode()) {
             if (columnIndex == AUSPRAEGUNG_COLUMN) {
-                final Baum currentBaum = getBaumAtRow(rowIndex);
+                final Baum currentBaum = getCidsBeanAtRow(rowIndex);
                 if (((currentBaum != null) && (currentBaum.getBaumNutzung() != null)
                                 && (currentBaum.getBaumNutzung().getBaumKategorie() != null))
                             || ((currentBaum.getBaumNutzung().getBaumKategorie().getKategorieAuspraegungen() != null)
@@ -237,21 +206,12 @@ public class BaumModel extends AbstractTableModel {
     /**
      * DOCUMENT ME!
      *
-     * @param  isEditable  DOCUMENT ME!
-     */
-    public void setIsInEditMode(final boolean isEditable) {
-        isInEditMode = isEditable;
-    }
-
-    /**
-     * DOCUMENT ME!
-     *
      * @return  DOCUMENT ME!
      */
-    public Vector<Feature> getAllBaumFeatures() {
-        final Vector<Feature> tmp = new Vector<Feature>();
-        if (baeume != null) {
-            final Iterator<BaumCustomBean> it = baeume.iterator();
+    public ArrayList<Feature> getAllBaumFeatures() {
+        final ArrayList<Feature> tmp = new ArrayList<Feature>();
+        if (getCidsBeans() != null) {
+            final Iterator<BaumCustomBean> it = (Iterator<BaumCustomBean>)getCidsBeans().iterator();
             while (it.hasNext()) {
                 final Baum curBaum = it.next();
                 if (curBaum.getGeometry() != null) {
@@ -264,37 +224,10 @@ public class BaumModel extends AbstractTableModel {
         }
     }
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @param  baeume  DOCUMENT ME!
-     */
-    public void refreshTableModel(final Collection<BaumCustomBean> baeume) {
-        try {
-            if (log.isDebugEnabled()) {
-                log.debug("Refresh des BaeumeTableModell");
-            }
-            this.baeume = new Vector<BaumCustomBean>(baeume);
-        } catch (Exception ex) {
-            log.error("Fehler beim refreshen des Models", ex);
-            this.baeume = new Vector<BaumCustomBean>();
-        }
-        fireTableDataChanged();
-    }
-
-    /**
-     * DOCUMENT ME!
-     *
-     * @return  DOCUMENT ME!
-     */
-    public Vector<BaumCustomBean> getAllBaeume() {
-        return baeume;
-    }
-
     @Override
     public void setValueAt(final Object aValue, final int rowIndex, final int columnIndex) {
         try {
-            final Baum value = baeume.get(rowIndex);
+            final Baum value = getCidsBeanAtRow(rowIndex);
             switch (columnIndex) {
                 case LAGE_COLUMN: {
                     value.setLage((String)aValue);
@@ -416,43 +349,6 @@ public class BaumModel extends AbstractTableModel {
         }
     }
 
-    @Override
-    public Class<?> getColumnClass(final int columnIndex) {
-        switch (columnIndex) {
-            case LAGE_COLUMN: {
-                return String.class;
-            }
-            case BAUMNUMMER_COLUMN: {
-                return String.class;
-            }
-            case FLAECHE_COLUMN: {
-                return Integer.class;
-            }
-            case ALTE_NUTZUNG_COLUMN: {
-                return String.class;
-            }
-            case BAUMBESTAND_COLUMN: {
-                return BaumNutzung.class;
-            }
-            case AUSPRAEGUNG_COLUMN: {
-                return Object.class;
-            }
-            case AUFTRAGNEMER_COLUMN: {
-                return String.class;
-            }
-            case ERFASSUNGSDATUM_COLUMN: {
-                return Date.class;
-            }
-            case FAELLDATUM_COLUMN: {
-                return Date.class;
-            }
-            default: {
-                log.warn("Die gewünschte Spalte exitiert nicht, es kann keine Klasse zurück geliefert werden");
-                return null;
-            }
-        }
-    }
-
     /**
      * DOCUMENT ME!
      */
@@ -472,17 +368,6 @@ public class BaumModel extends AbstractTableModel {
                     }
                 }
             };
-    }
-
-    /**
-     * DOCUMENT ME!
-     *
-     * @param   baum  DOCUMENT ME!
-     *
-     * @return  DOCUMENT ME!
-     */
-    public int getIndexOfBaum(final Baum baum) {
-        return baeume.indexOf(baum);
     }
 
     /**
