@@ -154,7 +154,6 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
     private ImageIcon icoExistingContract = new javax.swing.ImageIcon(getClass().getResource(
                 "/de/cismet/lagis/ressource/icons/toolbar/contract.png"));
     private JComboBox cbxAuspraegung = new JComboBox();
-    private boolean ignoreFeatureSelectionEvent = false;
     private final Icon copyDisplayIcon;
 
     private final ActionListener cboAuspraegungsActionListener = new ActionListener() {
@@ -807,7 +806,6 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         if (log.isDebugEnabled()) {
             log.debug("SelectionChanged Baum");
         }
-        final MappingComponent mappingComp = LagisBroker.getInstance().getMappingComponent();
         final int viewIndex = tblBaum.getSelectedRow();
         if (viewIndex != -1) {
             if (isInEditMode) {
@@ -881,7 +879,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         }
         ((JXTable)tblBaum).packAll();
     }
-
+    
     @Override
     public int getStatus() {
         if (tblBaum.getCellEditor() != null) {
@@ -1456,30 +1454,30 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
      *
      * @param  evt  DOCUMENT ME!
      */
-    private void btnUndoActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnUndoActionPerformed
+    private void btnUndoActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUndoActionPerformed
         // TODO add your handling code here:
-    } //GEN-LAST:event_btnUndoActionPerformed
+    }//GEN-LAST:event_btnUndoActionPerformed
 
     /**
      * DOCUMENT ME!
      *
      * @param  evt  DOCUMENT ME!
      */
-    private void btnAddExitingBaumActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnAddExitingBaumActionPerformed
+    private void btnAddExitingBaumActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddExitingBaumActionPerformed
         final JDialog dialog = new JDialog(LagisBroker.getInstance().getParentComponent(), "", true);
         dialog.add(new AddExistingBaumPanel(currentFlurstueck, baumModel, lstCrossRefs.getModel()));
         dialog.pack();
         dialog.setIconImage(icoExistingContract.getImage());
         dialog.setTitle("Vorhandener Vertrag hinzufügen...");
         StaticSwingTools.showDialog(dialog);
-    }                                                                                     //GEN-LAST:event_btnAddExitingBaumActionPerformed
+    }//GEN-LAST:event_btnAddExitingBaumActionPerformed
 
     /**
      * DOCUMENT ME!
      *
      * @param  evt  DOCUMENT ME!
      */
-    private void btnRemoveBaumActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnRemoveBaumActionPerformed
+    private void btnRemoveBaumActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRemoveBaumActionPerformed
         final int currentRow = tblBaum.getSelectedRow();
         if (currentRow != -1) {
             // VerwaltungsTableModel currentModel = (VerwaltungsTableModel)tNutzung.getModel();
@@ -1492,7 +1490,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 log.debug("liste ausgeschaltet");
             }
         }
-    } //GEN-LAST:event_btnRemoveBaumActionPerformed
+    }//GEN-LAST:event_btnRemoveBaumActionPerformed
 
     /**
      * DOCUMENT ME!
