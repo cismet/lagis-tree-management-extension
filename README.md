@@ -1,4 +1,4 @@
-lagis-tree-management-extension
+lagis-tree-management-extension [![Build Status](http://ci.cismet.de/buildStatus/icon?job=lagis-tree-management-extension)](https://ci.cismet.de/job/lagis-tree-management-extension/)
 ===============================
 LagIS extension for the management of of trees. -- Yes the green ones ;-) 
 
