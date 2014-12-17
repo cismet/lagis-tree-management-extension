@@ -122,7 +122,8 @@ public class AddExistingBaumPanel extends javax.swing.JPanel implements Validati
             if (baeume != null) {
                 // Check if the Contract ist already  added
                 // if(currentFlurstueck != null && currentFlurstueck.getVertraege() != null){
-                final Iterator<BaumCustomBean> it = currentBaumTabelModel.getAllBaeume().iterator();
+                final Iterator<BaumCustomBean> it = (Iterator<BaumCustomBean>)currentBaumTabelModel
+                            .getCidsBeans().iterator();
                 while (it.hasNext()) {
                     final Baum curBaum = it.next();
                     if (baeume.contains(curBaum)) {
@@ -261,9 +262,9 @@ public class AddExistingBaumPanel extends javax.swing.JPanel implements Validati
     private void btnOKActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnOKActionPerformed
         final int[] selectedRows = tblBaum.getSelectedRows();
         for (int i = 0; i < selectedRows.length; i++) {
-            final BaumCustomBean curBaum = baumModel.getBaumAtRow(((JXTable)tblBaum).convertRowIndexToModel(
+            final BaumCustomBean curBaum = baumModel.getCidsBeanAtRow(((JXTable)tblBaum).convertRowIndexToModel(
                         selectedRows[i]));
-            currentBaumTabelModel.addBaum(curBaum);
+            currentBaumTabelModel.addCidsBean(curBaum);
             currentBaumTabelModel.fireTableDataChanged();
             final Collection<FlurstueckSchluesselCustomBean> crossRefs = CidsBroker.getInstance()
                         .getCrossReferencesForBaum(curBaum);

@@ -80,6 +80,7 @@ import de.cismet.lagis.editor.DateEditor;
 import de.cismet.lagis.gui.checkbox.JCheckBoxList;
 import de.cismet.lagis.gui.copypaste.Copyable;
 import de.cismet.lagis.gui.copypaste.Pasteable;
+import de.cismet.lagis.gui.tables.RemoveActionHelper;
 
 import de.cismet.lagis.interfaces.FeatureSelectionChangedListener;
 import de.cismet.lagis.interfaces.FlurstueckChangeListener;
@@ -92,6 +93,8 @@ import de.cismet.lagis.renderer.DateRenderer;
 import de.cismet.lagis.renderer.FlurstueckSchluesselRenderer;
 
 import de.cismet.lagis.thread.BackgroundUpdateThread;
+
+import de.cismet.lagis.util.TableSelectionUtils;
 
 import de.cismet.lagis.utillity.GeometrySlotInformation;
 
@@ -130,7 +133,8 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
     FeatureCollectionListener,
     TableModelListener,
     Copyable,
-    Pasteable {
+    Pasteable,
+    RemoveActionHelper {
 
     //~ Static fields/initializers ---------------------------------------------
 
@@ -150,7 +154,6 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
     private ImageIcon icoExistingContract = new javax.swing.ImageIcon(getClass().getResource(
                 "/de/cismet/lagis/ressource/icons/toolbar/contract.png"));
     private JComboBox cbxAuspraegung = new JComboBox();
-    private boolean ignoreFeatureSelectionEvent = false;
     private final Icon copyDisplayIcon;
 
     private final ActionListener cboAuspraegungsActionListener = new ActionListener() {
@@ -160,16 +163,21 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
             }
         };
 
+    private boolean listenerEnabled = true;
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAddBaum;
     private javax.swing.JButton btnAddExitingBaum;
     private javax.swing.JButton btnRemoveBaum;
+    private javax.swing.JButton btnUndo;
     private javax.swing.JScrollPane cpBaum;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTabbedPane jTabbedPane2;
     private javax.swing.JList lstCrossRefs;
@@ -186,6 +194,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
     private javax.swing.JScrollPane spMerkmale;
     private javax.swing.JTextArea taBemerkung;
     private javax.swing.JTable tblBaum;
+    private javax.swing.JToggleButton tbtnSort;
     // End of variables declaration//GEN-END:variables
 
     //~ Constructors -----------------------------------------------------------
@@ -219,7 +228,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
 
     @Override
     public List<BasicEntity> getCopyData() {
-        final Vector<BaumCustomBean> allBaeume = this.baumModel.getAllBaeume();
+        final ArrayList<BaumCustomBean> allBaeume = (ArrayList<BaumCustomBean>)this.baumModel.getCidsBeans();
         final ArrayList<BasicEntity> result = new ArrayList<BasicEntity>(allBaeume.size());
 
         BaumCustomBean tmp;
@@ -265,13 +274,12 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         }
 
         if (item instanceof Baum) {
-            final Vector<BaumCustomBean> residentBaeume = this.baumModel.getAllBaeume();
+            final ArrayList<BaumCustomBean> residentBaeume = (ArrayList<BaumCustomBean>)this.baumModel.getCidsBeans();
 
             if (residentBaeume.contains(item)) {
                 log.warn("Baum " + item + " does already exist in Flurstück " + this.currentFlurstueck);
             } else {
-                this.baumModel.addBaum((BaumCustomBean)item);
-                this.baumModel.fireTableDataChanged();
+                this.baumModel.addCidsBean((BaumCustomBean)item);
 
                 final MappingComponent mc = LagisBroker.getInstance().getMappingComponent();
                 final Feature f = new StyledFeatureGroupWrapper((StyledFeature)item, PROVIDER_NAME, PROVIDER_NAME);
@@ -291,7 +299,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
             return;
         }
 
-        final Vector<BaumCustomBean> residentBaeume = this.baumModel.getAllBaeume();
+        final ArrayList<BaumCustomBean> residentBaeume = (ArrayList<BaumCustomBean>)this.baumModel.getCidsBeans();
         final int rowCountBefore = this.baumModel.getRowCount();
 
         final MappingComponent mc = LagisBroker.getInstance().getMappingComponent();
@@ -304,7 +312,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                     log.warn("Verwaltungsbereich " + entity + " does already exist in Flurstück "
                                 + this.currentFlurstueck);
                 } else {
-                    this.baumModel.addBaum((BaumCustomBean)entity);
+                    this.baumModel.addCidsBean((BaumCustomBean)entity);
                     wrapper = new StyledFeatureGroupWrapper((StyledFeature)entity, PROVIDER_NAME, PROVIDER_NAME);
                     fc.addFeature(wrapper);
                 }
@@ -339,7 +347,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
      * DOCUMENT ME!
      */
     private void configureComponents() {
-        tblBaum.setModel(baumModel);
+        TableSelectionUtils.crossReferenceModelAndTable(baumModel, (BaumTable)tblBaum);
         tblBaum.setDefaultEditor(Date.class, new DateEditor());
         tblBaum.setDefaultRenderer(Date.class, new DateRenderer());
         tblBaum.addMouseListener(this);
@@ -350,7 +358,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 public boolean isHighlighted(final Component renderer, final ComponentAdapter componentAdapter) {
                     final int displayedIndex = componentAdapter.row;
                     final int modelIndex = ((JXTable)tblBaum).getFilters().convertRowIndexToModel(displayedIndex);
-                    final Baum mp = baumModel.getBaumAtRow(modelIndex);
+                    final Baum mp = baumModel.getCidsBeanAtRow(modelIndex);
                     return (mp != null) && (mp.getGeometry() == null);
                 }
             };
@@ -362,7 +370,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 public boolean isHighlighted(final Component renderer, final ComponentAdapter componentAdapter) {
                     final int displayedIndex = componentAdapter.row;
                     final int modelIndex = ((JXTable)tblBaum).getFilters().convertRowIndexToModel(displayedIndex);
-                    final Baum mp = baumModel.getBaumAtRow(modelIndex);
+                    final Baum mp = baumModel.getCidsBeanAtRow(modelIndex);
                     return (mp != null) && (mp.getFaelldatum() != null) && (mp.getErfassungsdatum() != null)
                                 && (mp.getFaelldatum().getTime() < System.currentTimeMillis());
                 }
@@ -567,7 +575,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
 
                                 @Override
                                 public void run() {
-                                    final Vector<Feature> features = baumModel.getAllBaumFeatures();
+                                    final ArrayList<Feature> features = baumModel.getAllBaumFeatures();
                                     final MappingComponent mappingComp = LagisBroker.getInstance()
                                                 .getMappingComponent();
                                     final FeatureCollection featureCollection = mappingComp.getFeatureCollection();
@@ -661,7 +669,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 log.debug("BaumRessortWidget --> setComponentEditable");
             }
             isInEditMode = isEditable;
-            baumModel.setIsInEditMode(isEditable);
+            baumModel.setInEditMode(isEditable);
             final TableCellEditor currentEditor = tblBaum.getCellEditor();
             if (currentEditor != null) {
                 currentEditor.cancelCellEditing();
@@ -681,7 +689,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
 
             btnAddExitingBaum.setEnabled(isEditable);
             btnAddBaum.setEnabled(isEditable);
-            baumModel.setIsInEditMode(isEditable);
+            btnUndo.setEnabled(false);
             if (log.isDebugEnabled()) {
                 log.debug("BaumRessortWidget --> setComponentEditable finished");
             }
@@ -709,14 +717,14 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         final Collection<BaumCustomBean> baeume = flurstueck.getBaeume();
         if (log.isDebugEnabled()) {
             log.debug("Anzahl baeume aktuell gespeichert im Flurstück");
-            log.debug("Anzahl Baueme im tablemodel: " + baumModel.getAllBaeume().size());
+            log.debug("Anzahl Baueme im tablemodel: " + baumModel.getRowCount());
         }
         if (baeume != null) {
             if (log.isDebugEnabled()) {
                 log.debug("warens schon baueme vorhanden");
             }
             baeume.clear();
-            baeume.addAll(baumModel.getAllBaeume());
+            baeume.addAll((ArrayList<BaumCustomBean>)baumModel.getCidsBeans());
             if (log.isDebugEnabled()) {
                 log.debug("baueme im Flurstueck Set: " + baeume.size());
             }
@@ -725,7 +733,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 log.debug("Waren noch keine Baueme vorhanden");
             }
             final HashSet newSet = new HashSet();
-            newSet.addAll(baumModel.getAllBaeume());
+            newSet.addAll(baumModel.getCidsBeans());
             flurstueck.setBaeume(newSet);
         }
     }
@@ -798,7 +806,6 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         if (log.isDebugEnabled()) {
             log.debug("SelectionChanged Baum");
         }
-        final MappingComponent mappingComp = LagisBroker.getInstance().getMappingComponent();
         final int viewIndex = tblBaum.getSelectedRow();
         if (viewIndex != -1) {
             if (isInEditMode) {
@@ -809,7 +816,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
 
             final int index = ((JXTable)tblBaum).getFilters().convertRowIndexToModel(viewIndex);
             if ((index != -1) && (tblBaum.getSelectedRowCount() <= 1)) {
-                final Baum selectedBaum = baumModel.getBaumAtRow(index);
+                final Baum selectedBaum = baumModel.getCidsBeanAtRow(index);
                 baumModel.setCurrentSelectedBaum(selectedBaum);
                 if (selectedBaum != null) {
                     updateCbxAuspraegung(selectedBaum);
@@ -861,47 +868,8 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 } else {
                     enableSlaveComponents(isInEditMode);
                 }
-                if ((selectedBaum.getGeometry() != null)
-                            && !mappingComp.getFeatureCollection().isSelected(selectedBaum)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("SelectedBaum hat eine Geometry und ist nicht selektiert --> wird selektiert");
-                    }
-                    ignoreFeatureSelectionEvent = true;
-                    mappingComp.getFeatureCollection().select(selectedBaum);
-                    ignoreFeatureSelectionEvent = false;
-                } else if (selectedBaum.getGeometry() == null) {
-                    if (log.isDebugEnabled()) {
-                        log.debug(
-                            "Keine Baum Geometrie vorhanden die selektiert werden kann, prüfe ob eine Baumm Geometrie selektiert ist");
-                    }
-                    final Collection selectedFeatures = mappingComp.getFeatureCollection().getSelectedFeatures();
-                    if (selectedFeatures != null) {
-                        for (final Object currentObject : selectedFeatures) {
-                            if ((currentObject != null) && (currentObject instanceof Baum)) {
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Eine Baum Geometrie ist selektiert --> deselekt");
-                                }
-                                ignoreFeatureSelectionEvent = true;
-                                mappingComp.getFeatureCollection().unselect((Baum)currentObject);
-                                ignoreFeatureSelectionEvent = false;
-                            }
-                        }
-                    } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug("selected FeatureCollection ist leer");
-                        }
-                    }
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Die Geometrie des selektierten Baeume kann nicht seleketiert werden ");
-                        log.debug("alreadySelected: " + (mappingComp.getFeatureCollection().isSelected(selectedBaum))
-                                    + " hasGeometry: " + (selectedBaum.getGeometry() != null));
-                    }
-                    if (log.isDebugEnabled()) {
-                        log.debug("get Selected Feature: " + mappingComp.getFeatureCollection().getSelectedFeatures());
-                    }
-                }
             }
+            ((BaumTable)tblBaum).valueChanged_updateFeatures(this, e);
         } else {
             btnRemoveBaum.setEnabled(false);
             deselectAllListEntries();
@@ -911,7 +879,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         }
         ((JXTable)tblBaum).packAll();
     }
-
+    
     @Override
     public int getStatus() {
         if (tblBaum.getCellEditor() != null) {
@@ -919,7 +887,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
             return Validatable.ERROR;
         }
 
-        final Vector<BaumCustomBean> baeume = baumModel.getAllBaeume();
+        final ArrayList<BaumCustomBean> baeume = (ArrayList<BaumCustomBean>)baumModel.getCidsBeans();
         if ((baeume != null) || (baeume.size() > 0)) {
             for (final Baum currentBaum : baeume) {
                 if ((currentBaum != null)
@@ -961,8 +929,9 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         // TODO use Constants from Java
         final MerkmalCheckBox checkBox = (MerkmalCheckBox)e.getSource();
         if (tblBaum.getSelectedRow() != -1) {
-            final BaumCustomBean baum = baumModel.getBaumAtRow(((JXTable)tblBaum).getFilters().convertRowIndexToModel(
-                        tblBaum.getSelectedRow()));
+            final BaumCustomBean baum = baumModel.getCidsBeanAtRow(((JXTable)tblBaum).getFilters()
+                            .convertRowIndexToModel(
+                                tblBaum.getSelectedRow()));
             if (baum != null) {
                 Collection<BaumMerkmalCustomBean> merkmale = baum.getBaumMerkmal();
                 if (merkmale == null) {
@@ -1005,7 +974,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         } else {
             final int rowCount = baumModel.getRowCount();
             for (int i = 0; i < rowCount; i++) {
-                final Baum currentBaum = baumModel.getBaumAtRow(i);
+                final Baum currentBaum = baumModel.getCidsBeanAtRow(i);
                 // Geom geom;
                 if (currentBaum.getGeometry() == null) {
                     result.add(new GeometrySlotInformation(
@@ -1023,70 +992,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
     // HINT If there are problems try to remove/add Listselectionlistener at start/end of Method
     @Override
     public void featureSelectionChanged(final Collection<Feature> features) {
-        if (log.isDebugEnabled()) {
-            log.debug("FeatureSelectionChanged", new CurrentStackTrace());
-        }
-        // knaup
-        if (!ignoreFeatureSelectionEvent) {
-            if (features.size() == 0) {
-                return;
-            }
-            final int[] selectedRows = tblBaum.getSelectedRows();
-            if ((selectedRows != null) && (selectedRows.length > 0)) {
-                for (int i = 0; i < selectedRows.length; i++) {
-                    final int modelIndex = ((JXTable)tblBaum).getFilters().convertRowIndexToModel(selectedRows[i]);
-                    if (modelIndex != -1) {
-                        final Baum currentBaum = baumModel.getBaumAtRow(modelIndex);
-                        if ((currentBaum != null) && (currentBaum.getGeometry() == null)) {
-                            tblBaum.getSelectionModel().removeSelectionInterval(selectedRows[i], selectedRows[i]);
-                        }
-                    }
-                }
-            }
-
-            for (final Feature feature : features) {
-                if (feature instanceof Baum) {
-                    // TODO Refactor Name
-                    final int index = baumModel.getIndexOfBaum((Baum)feature);
-                    final int displayedIndex = ((JXTable)tblBaum).getFilters().convertRowIndexToView(index);
-                    if ((index != -1)
-                                && LagisBroker.getInstance().getMappingComponent().getFeatureCollection().isSelected(
-                                    feature)) {
-                        // tReBe.changeSelection(((JXTable)tReBe).getFilters().convertRowIndexToView(index),0,false,false);
-                        if (feature.getGeometry() != null) {
-                            // ((SimpleBackgroundedJPanel) this.panBackground).setBackgroundEnabled(true);
-                        } else {
-                            if (log.isDebugEnabled()) {
-                                log.debug("SetBackgroundEnabled abgeschaltet: ", new CurrentStackTrace());
-                            }
-                            // ((SimpleBackgroundedJPanel) this.panBackground).setBackgroundEnabled(false);
-                        }
-                        tblBaum.getSelectionModel().addSelectionInterval(displayedIndex, displayedIndex);
-                        final Rectangle tmp = tblBaum.getCellRect(displayedIndex, 0, true);
-                        if (tmp != null) {
-                            tblBaum.scrollRectToVisible(tmp);
-                        }
-                    } else {
-                        tblBaum.getSelectionModel().removeSelectionInterval(displayedIndex, displayedIndex);
-                        if (log.isDebugEnabled()) {
-                            log.debug("SetBackgroundEnabled abgeschaltet: ", new CurrentStackTrace());
-                        }
-                        // war schon ausdokumentiert
-                        // ((SimpleBackgroundedJPanel) this.panBackground).setBackgroundEnabled(false);
-                    }
-                } else {
-                    tblBaum.clearSelection();
-                    if (log.isDebugEnabled()) {
-                        log.debug("SetBackgroundEnabled abgeschaltet: ", new CurrentStackTrace());
-                    }
-                    // ((SimpleBackgroundedJPanel) this.panBackground).setBackgroundEnabled(false);
-                }
-            }
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug("Aktuelles change event wird ignoriert");
-            }
-        }
+        ((BaumTable)tblBaum).featureSelectionChanged(this, features, BaumCustomBean.class);
     }
 
     @Override
@@ -1099,14 +1005,20 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
      */
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
+        java.awt.GridBagConstraints gridBagConstraints;
+
         jPanel2 = new javax.swing.JPanel();
         jTabbedPane2 = new javax.swing.JTabbedPane();
         panBaumBordered = new javax.swing.JPanel();
+        jPanel4 = new javax.swing.JPanel();
         cpBaum = new javax.swing.JScrollPane();
-        tblBaum = new JXTable();
+        tblBaum = new BaumTable();
+        jPanel3 = new javax.swing.JPanel();
         btnAddBaum = new javax.swing.JButton();
         btnRemoveBaum = new javax.swing.JButton();
         btnAddExitingBaum = new javax.swing.JButton();
+        btnUndo = new javax.swing.JButton();
+        tbtnSort = new javax.swing.JToggleButton();
         jPanel1 = new javax.swing.JPanel();
         panBackground = new javax.swing.JPanel();
         panQuerverweise = new javax.swing.JPanel();
@@ -1144,6 +1056,8 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
 
         panBaumBordered.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
+        jPanel4.setLayout(new java.awt.GridBagLayout());
+
         cpBaum.setBorder(null);
 
         tblBaum.setModel(new javax.swing.table.DefaultTableModel(
@@ -1162,26 +1076,46 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                     { null, null, null, null, null, null, null }
                 },
                 new String[] { "Nummer", "Lage", "Fläche m²", "Nutzung", "Nutzer", "Vertragsbeginn", "Vertragsende" }));
+        ((BaumTable)tblBaum).setSortButton(tbtnSort);
+        ((BaumTable)tblBaum).setUndoButton(btnUndo);
         cpBaum.setViewportView(tblBaum);
 
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 1.0;
+        jPanel4.add(cpBaum, gridBagConstraints);
+
+        jPanel3.setLayout(new java.awt.GridBagLayout());
+
+        btnAddBaum.setAction(((BaumTable)tblBaum).getAddAction());
         btnAddBaum.setIcon(new javax.swing.ImageIcon(
                 getClass().getResource("/de/cismet/lagis/ressource/icons/buttons/add.png"))); // NOI18N
         btnAddBaum.setBorder(null);
         btnAddBaum.setBorderPainted(false);
         btnAddBaum.setFocusPainted(false);
-        btnAddBaum.addActionListener(new java.awt.event.ActionListener() {
+        btnAddBaum.setMaximumSize(new java.awt.Dimension(25, 25));
+        btnAddBaum.setMinimumSize(new java.awt.Dimension(25, 25));
+        btnAddBaum.setPreferredSize(new java.awt.Dimension(25, 25));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 3, 0, 3);
+        jPanel3.add(btnAddBaum, gridBagConstraints);
 
-                @Override
-                public void actionPerformed(final java.awt.event.ActionEvent evt) {
-                    btnAddBaumActionPerformed(evt);
-                }
-            });
-
+        btnRemoveBaum.setAction(((BaumTable)tblBaum).getRemoveAction());
         btnRemoveBaum.setIcon(new javax.swing.ImageIcon(
                 getClass().getResource("/de/cismet/lagis/ressource/icons/buttons/remove.png"))); // NOI18N
         btnRemoveBaum.setBorder(null);
         btnRemoveBaum.setBorderPainted(false);
         btnRemoveBaum.setFocusPainted(false);
+        btnRemoveBaum.setMaximumSize(new java.awt.Dimension(25, 25));
+        btnRemoveBaum.setMinimumSize(new java.awt.Dimension(25, 25));
+        btnRemoveBaum.setPreferredSize(new java.awt.Dimension(25, 25));
         btnRemoveBaum.addActionListener(new java.awt.event.ActionListener() {
 
                 @Override
@@ -1189,12 +1123,21 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                     btnRemoveBaumActionPerformed(evt);
                 }
             });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 4;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 3, 0, 0);
+        jPanel3.add(btnRemoveBaum, gridBagConstraints);
 
         btnAddExitingBaum.setIcon(new javax.swing.ImageIcon(
                 getClass().getResource("/de/cismet/lagis/ressource/icons/toolbar/contract.png"))); // NOI18N
         btnAddExitingBaum.setBorder(null);
         btnAddExitingBaum.setBorderPainted(false);
         btnAddExitingBaum.setFocusPainted(false);
+        btnAddExitingBaum.setMaximumSize(new java.awt.Dimension(25, 25));
+        btnAddExitingBaum.setMinimumSize(new java.awt.Dimension(25, 25));
+        btnAddExitingBaum.setPreferredSize(new java.awt.Dimension(25, 25));
         btnAddExitingBaum.addActionListener(new java.awt.event.ActionListener() {
 
                 @Override
@@ -1202,60 +1145,77 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                     btnAddExitingBaumActionPerformed(evt);
                 }
             });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 3, 0, 3);
+        jPanel3.add(btnAddExitingBaum, gridBagConstraints);
+
+        btnUndo.setAction(((BaumTable)tblBaum).getUndoAction());
+        btnUndo.setIcon(new javax.swing.ImageIcon(
+                getClass().getResource("/de/cismet/lagis/ressource/icons/buttons/undo.png"))); // NOI18N
+        btnUndo.setToolTipText("Rückgängig machen");
+        btnUndo.setBorder(null);
+        btnUndo.setBorderPainted(false);
+        btnUndo.setFocusPainted(false);
+        btnUndo.setMaximumSize(new java.awt.Dimension(25, 25));
+        btnUndo.setMinimumSize(new java.awt.Dimension(25, 25));
+        btnUndo.setPreferredSize(new java.awt.Dimension(25, 25));
+        btnUndo.addActionListener(new java.awt.event.ActionListener() {
+
+                @Override
+                public void actionPerformed(final java.awt.event.ActionEvent evt) {
+                    btnUndoActionPerformed(evt);
+                }
+            });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 3, 0, 3);
+        jPanel3.add(btnUndo, gridBagConstraints);
+
+        tbtnSort.setIcon(new javax.swing.ImageIcon(
+                getClass().getResource("/de/cismet/lagis/ressource/icons/buttons/sort.png")));          // NOI18N
+        tbtnSort.setToolTipText("Sortierung An / Aus");
+        tbtnSort.setBorderPainted(false);
+        tbtnSort.setContentAreaFilled(false);
+        tbtnSort.setMaximumSize(new java.awt.Dimension(25, 25));
+        tbtnSort.setMinimumSize(new java.awt.Dimension(25, 25));
+        tbtnSort.setPreferredSize(new java.awt.Dimension(25, 25));
+        tbtnSort.setSelectedIcon(new javax.swing.ImageIcon(
+                getClass().getResource("/de/cismet/lagis/ressource/icons/buttons/sort_selected.png"))); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 3);
+        jPanel3.add(tbtnSort, gridBagConstraints);
+        tbtnSort.addItemListener(((BaumTable)tblBaum).getSortItemListener());
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(10, 0, 3, 2);
+        jPanel4.add(jPanel3, gridBagConstraints);
 
         final javax.swing.GroupLayout panBaumBorderedLayout = new javax.swing.GroupLayout(panBaumBordered);
         panBaumBordered.setLayout(panBaumBorderedLayout);
         panBaumBorderedLayout.setHorizontalGroup(
             panBaumBorderedLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(
-                panBaumBorderedLayout.createSequentialGroup().addContainerGap().addGroup(
-                    panBaumBorderedLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(
-                        javax.swing.GroupLayout.Alignment.TRAILING,
-                        panBaumBorderedLayout.createSequentialGroup().addComponent(
-                            btnAddExitingBaum,
-                            javax.swing.GroupLayout.PREFERRED_SIZE,
-                            29,
-                            javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(
-                            javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(
-                            btnAddBaum,
-                            javax.swing.GroupLayout.PREFERRED_SIZE,
-                            31,
-                            javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(
-                            javax.swing.LayoutStyle.ComponentPlacement.RELATED).addComponent(
-                            btnRemoveBaum,
-                            javax.swing.GroupLayout.PREFERRED_SIZE,
-                            15,
-                            javax.swing.GroupLayout.PREFERRED_SIZE)).addComponent(
-                        cpBaum,
-                        javax.swing.GroupLayout.DEFAULT_SIZE,
-                        708,
-                        Short.MAX_VALUE)).addContainerGap()));
-
-        panBaumBorderedLayout.linkSize(
-            javax.swing.SwingConstants.HORIZONTAL,
-            new java.awt.Component[] { btnAddBaum, btnAddExitingBaum, btnRemoveBaum });
-
+                panBaumBorderedLayout.createSequentialGroup().addContainerGap().addComponent(
+                    jPanel4,
+                    javax.swing.GroupLayout.PREFERRED_SIZE,
+                    0,
+                    Short.MAX_VALUE).addContainerGap()));
         panBaumBorderedLayout.setVerticalGroup(
-            panBaumBorderedLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(
-                panBaumBorderedLayout.createSequentialGroup().addContainerGap().addGroup(
-                    panBaumBorderedLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(
-                        btnRemoveBaum,
-                        javax.swing.GroupLayout.PREFERRED_SIZE,
-                        23,
-                        javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(
-                        btnAddBaum,
-                        javax.swing.GroupLayout.PREFERRED_SIZE,
-                        28,
-                        javax.swing.GroupLayout.PREFERRED_SIZE).addComponent(
-                        btnAddExitingBaum,
-                        javax.swing.GroupLayout.PREFERRED_SIZE,
-                        0,
-                        Short.MAX_VALUE)).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                            .addComponent(cpBaum, javax.swing.GroupLayout.DEFAULT_SIZE, 299, Short.MAX_VALUE)
-                            .addContainerGap()));
-
-        panBaumBorderedLayout.linkSize(
-            javax.swing.SwingConstants.VERTICAL,
-            new java.awt.Component[] { btnAddBaum, btnAddExitingBaum, btnRemoveBaum });
+            panBaumBorderedLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(
+                jPanel4,
+                javax.swing.GroupLayout.DEFAULT_SIZE,
+                499,
+                Short.MAX_VALUE));
 
         jPanel1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
@@ -1283,7 +1243,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
             panQuerverweiseTitledLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(
                 jScrollPane1,
                 javax.swing.GroupLayout.DEFAULT_SIZE,
-                164,
+                22,
                 Short.MAX_VALUE));
 
         jLabel2.setText("Querverweise:");
@@ -1332,7 +1292,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
             panMerkmaleTitledLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(
                 spMerkmale,
                 javax.swing.GroupLayout.DEFAULT_SIZE,
-                164,
+                22,
                 Short.MAX_VALUE));
 
         jLabel1.setText("Merkmale:");
@@ -1383,7 +1343,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
             panBemerkungTitledLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(
                 spBemerkung,
                 javax.swing.GroupLayout.DEFAULT_SIZE,
-                164,
+                22,
                 Short.MAX_VALUE));
 
         jLabel3.setText("Bemerkung");
@@ -1488,27 +1448,40 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                     javax.swing.GroupLayout.DEFAULT_SIZE,
                     Short.MAX_VALUE).addContainerGap()));
     } // </editor-fold>//GEN-END:initComponents
-    /**
-     * DOCUMENT ME!
-     *
-     * @param  evt  DOCUMENT ME!
-     */
-    private void btnAddBaumActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnAddBaumActionPerformed
-        final BaumCustomBean tmpBaum = BaumCustomBean.createNew();
-        baumModel.addBaum(tmpBaum);
-        baumModel.fireTableDataChanged();
-    }                                                                              //GEN-LAST:event_btnAddBaumActionPerformed
 
     /**
      * DOCUMENT ME!
      *
      * @param  evt  DOCUMENT ME!
      */
-    private void btnRemoveBaumActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnRemoveBaumActionPerformed
+    private void btnUndoActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUndoActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btnUndoActionPerformed
+
+    /**
+     * DOCUMENT ME!
+     *
+     * @param  evt  DOCUMENT ME!
+     */
+    private void btnAddExitingBaumActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddExitingBaumActionPerformed
+        final JDialog dialog = new JDialog(LagisBroker.getInstance().getParentComponent(), "", true);
+        dialog.add(new AddExistingBaumPanel(currentFlurstueck, baumModel, lstCrossRefs.getModel()));
+        dialog.pack();
+        dialog.setIconImage(icoExistingContract.getImage());
+        dialog.setTitle("Vorhandener Vertrag hinzufügen...");
+        StaticSwingTools.showDialog(dialog);
+    }//GEN-LAST:event_btnAddExitingBaumActionPerformed
+
+    /**
+     * DOCUMENT ME!
+     *
+     * @param  evt  DOCUMENT ME!
+     */
+    private void btnRemoveBaumActionPerformed(final java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRemoveBaumActionPerformed
         final int currentRow = tblBaum.getSelectedRow();
         if (currentRow != -1) {
             // VerwaltungsTableModel currentModel = (VerwaltungsTableModel)tNutzung.getModel();
-            baumModel.removeBaum(((JXTable)tblBaum).getFilters().convertRowIndexToModel(currentRow));
+            baumModel.removeCidsBean(((JXTable)tblBaum).getFilters().convertRowIndexToModel(currentRow));
             baumModel.fireTableDataChanged();
             updateCrossRefs();
             enableSlaveComponents(false);
@@ -1517,21 +1490,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 log.debug("liste ausgeschaltet");
             }
         }
-    } //GEN-LAST:event_btnRemoveBaumActionPerformed
-
-    /**
-     * DOCUMENT ME!
-     *
-     * @param  evt  DOCUMENT ME!
-     */
-    private void btnAddExitingBaumActionPerformed(final java.awt.event.ActionEvent evt) { //GEN-FIRST:event_btnAddExitingBaumActionPerformed
-        final JDialog dialog = new JDialog(LagisBroker.getInstance().getParentComponent(), "", true);
-        dialog.add(new AddExistingBaumPanel(currentFlurstueck, baumModel, lstCrossRefs.getModel()));
-        dialog.pack();
-        dialog.setIconImage(icoExistingContract.getImage());
-        dialog.setTitle("Vorhandener Vertrag hinzufügen...");
-        StaticSwingTools.showDialog(dialog);
-    }                                                                                     //GEN-LAST:event_btnAddExitingBaumActionPerformed
+    }//GEN-LAST:event_btnRemoveBaumActionPerformed
 
     /**
      * DOCUMENT ME!
@@ -1541,7 +1500,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
             log.debug("Update der Querverweise");
         }
         final Collection<FlurstueckSchluesselCustomBean> crossRefs = CidsBroker.getInstance()
-                    .getCrossreferencesForBaeume(new HashSet(baumModel.getAllBaeume()));
+                    .getCrossreferencesForBaeume(new HashSet(baumModel.getCidsBeans()));
         final DefaultUniqueListModel newModel = new DefaultUniqueListModel();
         if (crossRefs != null) {
             if (log.isDebugEnabled()) {
@@ -1664,5 +1623,30 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
     @Override
     public boolean knowsDisplayName(final BasicEntity entity) {
         return entity instanceof Baum;
+    }
+
+    @Override
+    public void duringRemoveAction(final Object source) {
+        updateCrossRefs();
+        enableSlaveComponents(false);
+        deselectAllListEntries();
+        if (log.isDebugEnabled()) {
+            log.debug("liste ausgeschaltet");
+        }
+    }
+
+    @Override
+    public void afterRemoveAction(final Object source) {
+        // is not used at the moment
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    @Override
+    public boolean isFeatureSelectionChangedEnabled() {
+        return listenerEnabled;
+    }
+
+    @Override
+    public void setFeatureSelectionChangedEnabled(final boolean listenerEnabled) {
+        this.listenerEnabled = listenerEnabled;
     }
 }
