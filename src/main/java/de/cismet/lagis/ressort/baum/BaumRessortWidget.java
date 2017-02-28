@@ -23,12 +23,10 @@ import org.jdesktop.swingx.decorator.ColorHighlighter;
 import org.jdesktop.swingx.decorator.ComponentAdapter;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.Highlighter;
-import org.jdesktop.swingx.decorator.SortOrder;
 
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.EventQueue;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -43,7 +41,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.Vector;
 
 import javax.swing.DefaultListCellRenderer;
@@ -54,6 +51,7 @@ import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JList;
 import javax.swing.ListSelectionModel;
+import javax.swing.SortOrder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -110,7 +108,6 @@ import de.cismet.lagisEE.entity.core.hardwired.FlurstueckArt;
 import de.cismet.lagisEE.entity.extension.baum.Baum;
 import de.cismet.lagisEE.entity.extension.baum.BaumKategorie;
 import de.cismet.lagisEE.entity.extension.baum.BaumKategorieAuspraegung;
-import de.cismet.lagisEE.entity.extension.baum.BaumMerkmal;
 import de.cismet.lagisEE.entity.extension.baum.BaumNutzung;
 
 import de.cismet.tools.CurrentStackTrace;
@@ -357,7 +354,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 @Override
                 public boolean isHighlighted(final Component renderer, final ComponentAdapter componentAdapter) {
                     final int displayedIndex = componentAdapter.row;
-                    final int modelIndex = ((JXTable)tblBaum).getFilters().convertRowIndexToModel(displayedIndex);
+                    final int modelIndex = ((JXTable)tblBaum).convertRowIndexToModel(displayedIndex);
                     final Baum mp = baumModel.getCidsBeanAtRow(modelIndex);
                     return (mp != null) && (mp.getGeometry() == null);
                 }
@@ -369,7 +366,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 @Override
                 public boolean isHighlighted(final Component renderer, final ComponentAdapter componentAdapter) {
                     final int displayedIndex = componentAdapter.row;
-                    final int modelIndex = ((JXTable)tblBaum).getFilters().convertRowIndexToModel(displayedIndex);
+                    final int modelIndex = ((JXTable)tblBaum).convertRowIndexToModel(displayedIndex);
                     final Baum mp = baumModel.getCidsBeanAtRow(modelIndex);
                     return (mp != null) && (mp.getFaelldatum() != null) && (mp.getErfassungsdatum() != null)
                                 && (mp.getFaelldatum().getTime() < System.currentTimeMillis());
@@ -814,7 +811,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
                 btnRemoveBaum.setEnabled(false);
             }
 
-            final int index = ((JXTable)tblBaum).getFilters().convertRowIndexToModel(viewIndex);
+            final int index = ((JXTable)tblBaum).convertRowIndexToModel(viewIndex);
             if ((index != -1) && (tblBaum.getSelectedRowCount() <= 1)) {
                 final Baum selectedBaum = baumModel.getCidsBeanAtRow(index);
                 baumModel.setCurrentSelectedBaum(selectedBaum);
@@ -929,9 +926,8 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         // TODO use Constants from Java
         final MerkmalCheckBox checkBox = (MerkmalCheckBox)e.getSource();
         if (tblBaum.getSelectedRow() != -1) {
-            final BaumCustomBean baum = baumModel.getCidsBeanAtRow(((JXTable)tblBaum).getFilters()
-                            .convertRowIndexToModel(
-                                tblBaum.getSelectedRow()));
+            final BaumCustomBean baum = baumModel.getCidsBeanAtRow(((JXTable)tblBaum).convertRowIndexToModel(
+                        tblBaum.getSelectedRow()));
             if (baum != null) {
                 Collection<BaumMerkmalCustomBean> merkmale = baum.getBaumMerkmal();
                 if (merkmale == null) {
@@ -1481,7 +1477,7 @@ public class BaumRessortWidget extends AbstractWidget implements FlurstueckChang
         final int currentRow = tblBaum.getSelectedRow();
         if (currentRow != -1) {
             // VerwaltungsTableModel currentModel = (VerwaltungsTableModel)tNutzung.getModel();
-            baumModel.removeCidsBean(((JXTable)tblBaum).getFilters().convertRowIndexToModel(currentRow));
+            baumModel.removeCidsBean(((JXTable)tblBaum).convertRowIndexToModel(currentRow));
             baumModel.fireTableDataChanged();
             updateCrossRefs();
             enableSlaveComponents(false);
