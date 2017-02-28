@@ -56,7 +56,7 @@ public class BaumTable extends AbstractCidsBeanTable_Lagis {
 
     @Override
     protected void removeItem(final int row) {
-        ((BaumModel)getModel()).removeCidsBean(this.getFilters().convertRowIndexToModel(getSelectedRow()));
+        ((BaumModel)getModel()).removeCidsBean(this.convertRowIndexToModel(getSelectedRow()));
         removeActionHelper.duringRemoveAction(this);
     }
 }

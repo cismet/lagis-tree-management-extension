@@ -60,7 +60,7 @@
         <dependency>
             <groupId>de.cismet.lagis</groupId>
             <artifactId>lagis-client</artifactId>
-            <version>4.0</version>
+            <version>4.1</version>
         </dependency>
     </dependencies>
 </project>
