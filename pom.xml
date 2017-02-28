@@ -49,6 +49,27 @@
             </dependency>
             
             <dependency>
+                <groupId>de.cismet.commons</groupId>
+                <artifactId>cismet-gui-commons</artifactId>
+                <version>5.0-SNAPSHOT</version>
+                <scope>provided</scope>
+                <type>jar</type>
+            </dependency>
+            <dependency>
+                <groupId>de.cismet.commons</groupId>
+                <artifactId>cismet-commons</artifactId>
+                <version>5.0-SNAPSHOT</version>
+                <scope>provided</scope>
+                <type>jar</type>
+            </dependency>
+            <dependency>
+                <groupId>de.cismet.commons</groupId>
+                <artifactId>cismap-commons</artifactId>
+                <version>5.0-SNAPSHOT</version>
+                <scope>provided</scope>
+                <type>jar</type>
+            </dependency>
+            <dependency>
                 <groupId>de.cismet.lagis</groupId>
                 <artifactId>lagis-client</artifactId>
                 <version>5.0-SNAPSHOT</version>
@@ -81,13 +102,36 @@
             <artifactId>lagis-client</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>de.cismet.commons</groupId>
+            <artifactId>cismet-gui-commons</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.cismet.commons</groupId>
+            <artifactId>cismet-commons</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.cismet.commons</groupId>
+            <artifactId>cismap-commons</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <!-- END: cids-dependencies -->
         
         <!-- BEGIN: managed dependencies -->
+        
+        <!--
+           ?!?! Must include slf4j-api during compilation to avoid the following error: 
+
+           Bad service configuration file, or exception thrown while constructing Processor object: 
+           javax.annotation.processing.Processor: Provider org.deegree.commons.processors.LoggingAnnotationProcessor 
+           could not be instantiated: java.lang.NoClassDefFoundError: org/slf4j/LoggerFactory
+        -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <scope>compile</scope>
+            <scope>provided</scope>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -95,6 +139,23 @@
             <artifactId>log4j</artifactId>
             <scope>compile</scope>
             <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>com.vividsolutions</groupId>
+            <artifactId>jts</artifactId>
+            <scope>provided</scope>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>edu.umd</groupId>
+            <artifactId>piccolo</artifactId>
+            <scope>provided</scope>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.swinglabs</groupId>
+            <artifactId>swingx</artifactId>
+            <scope>provided</scope>
         </dependency>
         <!-- END: managed dependencies -->
     </dependencies>
